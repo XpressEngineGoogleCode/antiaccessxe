@@ -53,17 +53,52 @@
          * @brief 모듈 제거
          **/
         function moduleUninstall() {
+            /* 캐시 사용 중일 경우 원본 index.php를 복구 */
+            $this->ftp_password = Context::get('ftp_password');
+
+            $oFileHandler = new FileHandler();
+            $index_path = _XE_PATH_."index.php";
+            $index_bak_path = _XE_PATH_."modules/antiaccess/config/index.bak.php";
+
+            $file_buff = $oFileHandler->readFile($index_path);
+            preg_match_all("!\[([^\>]*)\]!is", $file_buff, $index_ver);
+
+            if(@$index_ver[1][0] == "Core 1.4.4.2, Anti-accessXE") { 
+                // 백업시켰던 파일이 존재할 경우
+                if(is_file($index_bak_path)) {
+                    // FTP 로그인
+                    if($this->ftpConn()) {
+                        // 복사가 붙여넣기가 가능하도록 퍼미션을 변경
+                        if($this->ftpChmod(0777, "index.php")) {
+                            // 백업 시켰던 index.php파일을 복구시킴(복사 overwrite)
+                            $oFileHandler->copyFile($index_bak_path, $index_path, 'Y');
+                            // 백업파일을 삭제
+                            $oFileHandler->removeFile($index_bak_path);
+
+                            // 퍼미션을 원래대로 복구
+                            $this->ftpChmod(0644, "index.php");
+                        }
+
+                        // FTP 종료
+                        $this->FtpDisConn();
+                    }
+                } else return new Object(-1, "msg_backup_fail");
+            }
+
             $oModuleModel = &getModel('module');
             $oModuleController = &getController('module');
             $oAntiaccessModel = &getModel('antiaccess');
             $oAntiaccessController = &getController('antiaccess');
             $oDB = &DB::getInstance();
 
+            // antiaccess module config delete
+            $args->module = 'antiaccess';
+            $output = executeQuery('module.deleteModuleConfig', $args);
+            if(!$output->toBool()) { $oDB->rollback(); return; }
+
             // Follow Host Delete
-            $output = $oAntiaccessModel->getAntiaccessFollowhostTotal($args);
-            foreach($output as $val) {
-                $oAntiaccessController->deleteAntiaccessFollowhost($val);
-            }
+            $output = $oAntiaccessModel->getAntiaccessFollowhostTotal();
+            foreach($output as $val) $oAntiaccessController->deleteAntiaccessFollowhost($val);
 
             // Trigger Delete
             if($oModuleModel->getTrigger('moduleObject.proc', 'antiaccess', 'controller', 'procAntiaccess', 'before'))
@@ -99,7 +134,7 @@
                 if($oDB->isTableExists($table_name)) {
                     $oDB->begin();
                     $result = $oDB->_query(sprintf("drop table %s%s", $oDB->prefix, $table_name));
-                    if($oDB->isError()) $oDB->rollback();
+                    if($oDB->isError()) { $oDB->rollback(); return; }
                 }
             }
 

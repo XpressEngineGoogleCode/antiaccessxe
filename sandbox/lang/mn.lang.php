@@ -233,6 +233,7 @@
     $lang->msg_not_my_level = "Follow Host로부터 전달받을 IP 종류를 먼저 설정하셔야 합니다.";
     $lang->msg_synchronization = "동기화 중에는 정보 변경이 불가능 합니다.";
     $lang->msg_fail_to_update = "Follow Host에 업데이트를 실패했습니다.";
+    $lang->msg_backup_fail = "백업된 파일이 존재하지 않아 삭제할 수 없습니다.";
 
     /* new version */
     $lang->msg_antiaccess_new_version = "현재 버전은 최신 버전보다 구버전 입니다.\\n최신버전으로 업그래이드 해주세요.";
