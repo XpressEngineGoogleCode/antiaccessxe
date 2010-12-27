@@ -110,7 +110,7 @@ var $antiaccess = {
                 $antiaccess.updateAccessipUnblock(this);
             });
 
-            // 접근한 IP 자동차단 해제 설정
+            // 동기화 진행
             $('#follow_host a[id^=sync_]').click(function() {
                 $antiaccess.synchronization(this);
             });

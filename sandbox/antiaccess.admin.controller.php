@@ -359,7 +359,7 @@
             if(!$accessip_info) return new Object(-1, "msg_invalid_request");
 
             // 새로운 IP라면 등록자가 Source Host가 됨
-            $uri = $oAntiaccessModel->parseUri(Context::get('request_uri'));
+            $uri = $oAntiaccessModel->parseUri(Context::get('request_uri'), 'www');
 
             // 금지인지 비금지인지, 새로운 값인지 기존 값인지 캐시 사용인지 여부에 따른 추가, 수정 처리
             if($args->ban) {

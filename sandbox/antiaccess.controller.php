@@ -572,17 +572,18 @@
             if($anti_config->block->limit_act && ($anti_config->block->limit_act <= $ipv4_count->act)) $block_mode = true;
             // 차단 설정 수행
             if($block_mode == true) $this->procAntiaccessBlock();
+            else {
+                // access ip(접근한 ip)에 나타낼 현재 카운터 기록(수정)
+                $args_vars->limit_count = $ipv4_count->count;
+                $args_vars->limit_display = $ipv4_count->display;
+                $args_vars->limit_rss = $ipv4_count->rss;
+                $args_vars->limit_atom = $ipv4_count->atom;
+                $args_vars->limit_trackback = $ipv4_count->trackback;
+                $args_vars->limit_act = $ipv4_count->act;
+                if(!$args_vars->ipaddress) $args_vars->ipaddress = Context::get('_REMOTE_ADDR_');
 
-            // access ip(접근한 ip)에 나타낼 현재 카운터 기록(수정)
-            $args_vars->limit_count = $ipv4_count->count;
-            $args_vars->limit_display = $ipv4_count->display;
-            $args_vars->limit_rss = $ipv4_count->rss;
-            $args_vars->limit_atom = $ipv4_count->atom;
-            $args_vars->limit_trackback = $ipv4_count->trackback;
-            $args_vars->limit_act = $ipv4_count->act;
-            if(!$args_vars->ipaddress) $args_vars->ipaddress = Context::get('_REMOTE_ADDR_');
-
-            $this->updateAntiaccessAccessip($args_vars);
+                $this->updateAntiaccessAccessip($args_vars);
+            }
 
             // DB Table Optimize
             $this->optimize();
@@ -629,7 +630,7 @@
                 // 해당 IP를 금지 IP로 등록
                 $is_banip = $oAntiaccessModel->getAntiaccessBanipCount($args);
                 if(!$is_banip) {
-                    $uri = $oAntiaccessModel->parseUri(Context::get('request_uri'));
+                    $uri = $oAntiaccessModel->parseUri(Context::get('request_uri'), 'www');
                     $obj->source_host = $uri['host'];
                     $this->insertAntiaccessBanip($obj);
                 } else $this->updateAntiaccessBanip($obj);
