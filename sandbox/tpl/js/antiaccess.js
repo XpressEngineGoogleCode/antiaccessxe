@@ -68,9 +68,6 @@ var $antiaccess = {
     },
     // 최신 버전 상태 알림
     new_version : function() {
-        var params = new Array();
-        params['check'] = 'Y';
-
         alert(msg_antiaccess_new_version);
 
         var url = "http://www.xpressengine.com/?mid=download&package_srl=19323693";
