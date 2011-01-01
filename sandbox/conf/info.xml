@@ -20,8 +20,8 @@
     <description xml:lang="zh-TW">Multiple access ip and spam ip banned by learning.</description>
     <description xml:lang="vi">Multiple access ip and spam ip banned by learning.</description>
     <description xml:lang="mn">Multiple access ip and spam ip banned by learning.</description>
-    <version>1.0.1</version>
-    <date>2010-12-28</date>
+    <version>1.0.2</version>
+    <date>2011-01-01</date>
     <category>accessory</category>
 
     <author email_address="cbrghost@gmail.com" link="http://antiaccess.xpressengine.net">

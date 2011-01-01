@@ -7,7 +7,7 @@
 
     class antiaccess extends ModuleObject {
 
-        var $antiaccess_version = '1.0.1';
+        var $antiaccess_version = '1.0.2';
         var $remote_addr = '';
         var $cache_white_path = "files/cache/antiaccess/white/";
         var $cache_ban_path = "files/cache/antiaccess/ban/";
@@ -267,8 +267,8 @@
 
             foreach($output as $val) {
                 // 단편화가 이루어져있는 대상만 최적화 함
-                if($val->Data_free > 0) {
-                    $oDB->_query(sprintf("optimize table '%s'", $val->Name));
+                if($val->Data_free == 0) {
+                    $oDB->_query(sprintf("optimize table `%s`", $val->Name));
                     if($oDB->isError()) continue;
                 }
             }
