@@ -7,7 +7,7 @@
 
     class antiaccess extends ModuleObject {
 
-        var $antiaccess_version = '1.0.2.2';
+        var $antiaccess_version = '1.0.2.1';
         var $remote_addr = '';
         var $cache_white_path = "files/cache/antiaccess/white/";
         var $cache_ban_path = "files/cache/antiaccess/ban/";
