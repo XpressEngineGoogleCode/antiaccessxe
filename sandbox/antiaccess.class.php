@@ -7,7 +7,7 @@
 
     class antiaccess extends ModuleObject {
 
-        var $antiaccess_version = '1.0.2';
+        var $antiaccess_version = '1.0.2.1';
         var $remote_addr = '';
         var $cache_white_path = "files/cache/antiaccess/white/";
         var $cache_ban_path = "files/cache/antiaccess/ban/";
@@ -240,11 +240,11 @@
             if(!$anti_config->optimize->date) return false;
 
             // 최적화 사용 주기마다 수행
-            $time = date('YmdHis', strtotime(sprintf('-%d minutes', $anti_config->optimize->date)));
+            $time = date('Ymd', strtotime(sprintf('-%d days', $anti_config->optimize->date)));
             if($anti_config->optimize->checkdate && ($anti_config->optimize->checkdate > $time)) return false;
 
             // 마지막 수행 시간 저장
-            $anti_config->optimize->checkdate = date('YmdHis');
+            $anti_config->optimize->checkdate = date('Ymd');
             $oModuleController->insertModuleConfig('antiaccess', $anti_config);
 
             $oDB = &DB::getInstance();
