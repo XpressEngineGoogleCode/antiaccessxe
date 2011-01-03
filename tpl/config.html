@@ -1,0 +1,221 @@
+<include target="header.html" />
+
+<h4 class="xeAdmin">{$lang->antiaccess_use}</h4>
+<table cellspacing="0" id="use_config" class="rowTable" summary="{$lang->antiaccess_use_summary}">
+<caption>{$lang->antiaccess_caption} : use config</caption>
+    <tr>
+        <th scope="col"><div>{$lang->antiaccess_use_block}</div></th>
+        <td>
+            <input type="checkbox" name="use_block" id="use_block" value="Y" checked="checked"|cond="$anti_config->use->use_block=='Y'" /><label for="use_block">{$lang->use}</label>
+            <p>{$lang->antiaccess_use_block_description}</p>
+        </td>
+    </tr>
+    <tr>
+        <th scope="col"><div>{$lang->antiaccess_use_banned}</div></th>
+        <td>
+            <input type="checkbox" name="use_banned" id="use_banned" value="Y" checked="checked"|cond="$anti_config->use->use_banned=='Y'" /><label for="use_banned">{$lang->use}</label>
+            <p>{$lang->antiaccess_use_banned_description}</p>
+        </td>
+    </tr>
+    <tr>
+        <th scope="col"><div>{$lang->antiaccess_use_white}</div></th>
+        <td>
+            <input type="checkbox" name="use_white" id="use_white" value="Y" checked="checked"|cond="$anti_config->use->use_white=='Y'" /><label for="use_white">{$lang->use}</label>
+            <p>{$lang->antiaccess_use_white_description}</p>
+        </td>
+    </tr>
+    <tr>
+        <th colspan="2">
+            <span style="font-weight:normal;">{$lang->antiaccess_use_description}</span>
+        </th>
+    </tr>
+</table>
+
+<!--%import("filter/insert_config.xml")-->
+<form action="./" method="get" onsubmit="return procFilter(this, insert_config)">
+    <h4 class="xeAdmin">{$lang->antiaccess_header}</h4>
+    <table cellspacing="0" class="rowTable" summary="{$lang->antiaccess_header_summary}">
+    <caption>{$lang->antiaccess_caption} : header config</caption>
+        <tr>
+            <th scope="row"><div>{$lang->antiaccess_code}</div></th>
+            <td class="wide">
+                <label for="code403"><input type="radio" id="code403" name="code" value="403" checked="checked"|cond="$anti_config->header->code==403" /> 403</label>
+                <label for="code404"><input type="radio" id="code404" name="code" value="404" checked="checked"|cond="$anti_config->header->code==404" /> 404</label>
+                <p>{$lang->antiaccess_code_description}</p>
+            </td>
+        </tr>
+        <tr class="row">
+            <th scope="col"><div>{$lang->antiaccess_msg}</div></th>
+            <td class="wide">
+                <textarea name="msg" class="inputTypeTextArea fullWidth">{$anti_config->header->msg}</textarea>
+                <p>{$lang->antiaccess_msg_description}</p>
+            </td>
+        </tr>
+    </table>
+
+    <h4 class="xeAdmin">{$lang->antiaccess_block}</h4>
+    <table cellspacing="0" class="rowTable" summary="{$lang->antiaccess_block_summary}">
+    <caption>{$lang->antiaccess_caption} : block config</caption>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_limit_time}</div></th>
+            <td>
+                <input type="text" name="antiaccess_limit_time" value="{$anti_config->block->limit_time}" class="inputTypeText w60" />
+                <p>{$lang->antiaccess_limit_time_description}</p>
+            </td>
+        </tr>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_limit_count}</div></th>
+            <td>
+                <input type="text" name="antiaccess_limit_count" value="{$anti_config->block->limit_count}" class="inputTypeText w60" />
+                <p>{$lang->antiaccess_limit_count_description}</p>
+            </td>
+        </tr>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_limit_display}</div></th>
+            <td>
+                <input type="text" name="antiaccess_limit_display" value="{$anti_config->block->limit_display}" class="inputTypeText w60" />
+                <p>{$lang->antiaccess_limit_display_description}</p>
+            </td>
+        </tr>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_limit_rss}</div></th>
+            <td>
+                <input type="text" name="antiaccess_limit_rss" value="{$anti_config->block->limit_rss}" class="inputTypeText w60" />
+                <p>{$lang->antiaccess_limit_rss_description}</p>
+            </td>
+        </tr>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_limit_atom}</div></th>
+            <td>
+                <input type="text" name="antiaccess_limit_atom" value="{$anti_config->block->limit_atom}" class="inputTypeText w60" />
+                <p>{$lang->antiaccess_limit_atom_description}</p>
+            </td>
+        </tr>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_limit_trackback}</div></th>
+            <td>
+                <input type="text" name="antiaccess_limit_trackback" value="{$anti_config->block->limit_trackback}" class="inputTypeText w60" />
+                <p>{$lang->antiaccess_limit_trackback_description}</p>
+            </td>
+        </tr>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_limit_act}</div></th>
+            <td>
+                <input type="text" name="antiaccess_limit_act" value="{$anti_config->block->limit_act}" class="inputTypeText w60" />
+                <p>{$lang->antiaccess_limit_act_description}</p>
+            </td>
+        </tr>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_limit_block}</div></th>
+            <td>
+                <input type="text" name="antiaccess_limit_block" value="{$anti_config->block->limit_block}" class="inputTypeText w60" />
+                <p>{$lang->antiaccess_limit_block_description}</p>
+            </td>
+        </tr>
+    </table>
+
+    <h4 class="xeAdmin">{$lang->antiaccess_not_act}</h4>
+    <table cellspacing="0" class="rowTable" summary="{$lang->antiaccess_not_act_summary}">
+    <caption>{$lang->antiaccess_caption} : not act config</caption>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_not_act}</div></th>
+            <td>
+                <input type="text" name="not_act" value="{$anti_config->not_act}" class="inputTypeText w400" />
+                <p>{nl2br($lang->antiaccess_not_act_description)}</p>
+            </td>
+        </tr>
+    </table>
+
+    <h4 class="xeAdmin">{$lang->antiaccess_banned}</h4>
+    <table cellspacing="0" class="rowTable" summary="{$lang->antiaccess_banned_summary}">
+    <caption>{$lang->antiaccess_caption} : banned config</caption>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_occur_count}</div></th>
+            <td>
+                <input type="text" name="antiaccess_occur_count" value="{$anti_config->banned->occur_count}" class="inputTypeText w60" />
+                <p>{$lang->antiaccess_occur_count_description}</p>
+            </td>
+        </tr>
+    </table>
+
+    <h4 class="xeAdmin">{$lang->antiaccess_white}</h4>
+    <table cellspacing="0" class="rowTable" summary="{$lang->antiaccess_white_summary}">
+    <caption>{$lang->antiaccess_caption} : white config</caption>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_groups}</div></th>
+            <td>
+                <block loop="$group_list => $val">
+                <input type="checkbox" name="white_groups[]" id="group_{$val->group_srl}" value="{$val->group_srl}" checked="checked"|cond="$anti_config->white_groups[$val->group_srl]" /><label for="group_{$val->group_srl}">{$val->title}</label>
+                </block>
+                <p>{$lang->antiaccess_groups_description}</p>
+            </td>
+        </tr>
+    </table>
+
+    <h4 class="xeAdmin">{$lang->antiaccess_cache}</h4>
+    <table cellspacing="0" class="rowTable" summary="{$lang->antiaccess_cache_summary}">
+    <caption>{$lang->antiaccess_caption} : cache config</caption>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_cache_type}</div></th>
+            <td>
+                <select name="cache_type">
+                    <block loop="$lang->antiaccess_cache_select => $key, $val">
+                    <option value="{$key}" selected="selected"|cond="$anti_config->cache->cache_type==$key">{$val}</option>
+                    </block>
+                </select>
+                <p>{nl2br($lang->antiaccess_cache_type_description)}</p>
+            </td>
+        </tr>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_cache_index}</div></th>
+            <td>
+                <select name="cache_index">
+                    <option value="0" selected="selected"|cond="$anti_config->cache->cache_index==0">{$lang->antiaccess_not_apply}</option>
+                    <option value="1" selected="selected"|cond="$anti_config->cache->cache_index==1">{$lang->antiaccess_apply}</option>
+                </select>
+                <p>{nl2br($lang->antiaccess_cache_index_description)}</p>
+            </td>
+        </tr>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_cache_backup}</div></th>
+            <td>
+                <div><span class="green" cond="$index_bak=='complete'">{$index_bak}</span><span class="red" cond="$index_bak!='complete'">{$index_bak}</span></div>
+                <p>{$lang->antiaccess_cache_backup_description}</p>
+            </td>
+        </tr>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_cache_index_ver}</div></th>
+            <td>
+                <div><span>{$index_ver}</span></div>
+                <p>{$lang->antiaccess_cache_index_ver_description}</p>
+            </td>
+        </tr>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_ftp_pass}</div></th>
+            <td>
+                <input type="password" name="ftp_password" value="" class="inputTypeText w150" />
+                <p>{nl2br($lang->antiaccess_ftp_pass_description)}</p>
+            </td>
+        </tr>
+    </table>
+
+    <h4 class="xeAdmin">{$lang->antiaccess_optimize}</h4>
+    <table cellspacing="0" class="rowTable" summary="{$lang->antiaccess_optimize_summary}">
+    <caption>{$lang->antiaccess_caption} : optimize config</caption>
+        <tr>
+            <th scope="col"><div>{$lang->antiaccess_optimize_date}</div></th>
+            <td>
+                <input type="input" name="antiaccess_optimize_date" value="{$anti_config->optimize->date}" class="inputTypeText w80" />
+                <p>{nl2br($lang->antiaccess_optimize_date_description)}</p>
+            </td>
+        </tr>
+    </table>
+
+    <table cellspacing="0" class="rowTable">
+        <tr>
+            <th class="button">
+                <span class="button black strong"><input type="submit" value="{$lang->cmd_registration}" accesskey="s" /></span>
+            </th>
+        </tr>
+    </table>
+</form>
