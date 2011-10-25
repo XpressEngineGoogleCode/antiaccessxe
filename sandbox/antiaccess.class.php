@@ -7,7 +7,7 @@
 
     class antiaccess extends ModuleObject {
 
-        var $antiaccess_version = '1.0.2.2';
+        var $antiaccess_version = '1.0.3';
         var $remote_addr = '';
         var $cache_white_path = "files/cache/antiaccess/white/";
         var $cache_ban_path = "files/cache/antiaccess/ban/";
@@ -32,6 +32,10 @@
             $oModuleController->insertTrigger('antiaccess.deleteAntiaccessBanip', 'antiaccess', 'controller', 'deleteAntiaccessBanipPush', 'before');
             $oModuleController->insertTrigger('antiaccess.deleteAntiaccessWhiteip', 'antiaccess', 'controller', 'deleteAntiaccessWhiteipPush', 'before');
 
+            $oFileHandler = new FileHandler();
+            $oFileHandler->makeDir(_XE_PATH_."files/antiaccess/config/");
+            $oFileHandler->makeDir(_XE_PATH_."files/antiaccess/index/");
+
             return new Object();
         }
 
@@ -39,6 +43,9 @@
          * @brief 설치가 이상이 없는지 체크하는 method
          **/
         function checkUpdate() {
+
+            if(!is_dir(_XE_PATH_."files/antiaccess/config/")) return true;
+
             return false;
         }
 
@@ -46,7 +53,19 @@
          * @brief 업데이트 실행
          **/
         function moduleUpdate() {
-            return new Object();
+
+            if(!is_dir(_XE_PATH_."files/antiaccess/config/")) {
+                $oModuleModel = &getModel('module');
+                $anti_config = $oModuleModel->getModuleConfig('antiaccess');
+
+                // 캐시용 index.php에서 처리하기 위해 기본 설정을 파일로 저장
+                $anti_config = serialize($anti_config);
+                $oFileHandler = new FileHandler();
+                $oFileHandler->writeFile(_XE_PATH_."files/antiaccess/config/config", $anti_config, 'w');
+                $oFileHandler->copyFile(_XE_PATH_."modules/antiaccess/tpl/index/index.bak.php", _XE_PATH_."files/antiaccess/index/index.bak.php", 'Y');
+            }
+
+            return new Object(0,'success_updated');
         }
 
         /**
@@ -58,12 +77,12 @@
 
             $oFileHandler = new FileHandler();
             $index_path = _XE_PATH_."index.php";
-            $index_bak_path = _XE_PATH_."modules/antiaccess/config/index.bak.php";
+            $index_bak_path = _XE_PATH_."files/antiaccess/index/index.bak.php";
 
             $file_buff = $oFileHandler->readFile($index_path);
-            preg_match_all("!\[([^\>]*)\]!is", $file_buff, $index_ver);
+            preg_match_all("!\[@@([^\>]*)\@@]!is", $file_buff, $index_ver);
 
-            if(@$index_ver[1][0] == "Core 1.4.4.2, Anti-accessXE") { 
+            if(@$index_ver[1][0] == "Anti-accessXE") { 
                 // 백업시켰던 파일이 존재할 경우
                 if(is_file($index_bak_path)) {
                     // FTP 로그인
@@ -141,8 +160,9 @@
             // commit
             $oDB->commit();
 
-            // Cache Delete
+            // Cache & Config Delete
             @FileHandler::removeDir(_XE_PATH_."files/cache/antiaccess");
+            @FileHandler::removeDir(_XE_PATH_."files/antiaccess");
             return new Object();
         }
 

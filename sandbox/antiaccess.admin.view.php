@@ -30,12 +30,10 @@
 
             $oFileHandler = new FileHandler();
             $index_path = _XE_PATH_."index.php";
-            $index_bak_path = _XE_PATH_."modules/antiaccess/config/index.bak.php";
+            $index_bak_path = _XE_PATH_."files/antiaccess/index/index.bak.php";
 
             $file_buff = $oFileHandler->readFile($index_path);
-            preg_match_all("!\[([^\>]*)\]!is", $file_buff, $index_ver);
-
-            Context::set('index_ver',@$index_ver[1][0]);
+            preg_match_all("!\[@@([^\>]*)\@@]!is", $file_buff, $index_ver);
 
             if(@$index_ver[1][0] && is_file($index_bak_path)) $index_bak = "complete";
             elseif(is_file($index_bak_path)) $index_bak = "none_index";

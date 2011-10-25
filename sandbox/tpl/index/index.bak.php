@@ -37,12 +37,6 @@
 	define('__XE__',   true);
 
     /**
-     * @brief Refresh, 트래픽 유발 공격 대응 [@@Anti-accessXE@@]
-     **/
-    define('_ANTI_ACCESS_', str_replace('index.php', '', str_replace('\\', '/', __FILE__)).'modules/antiaccess/antiaccess.index.php');
-    if(is_file(_ANTI_ACCESS_)) require_once(_ANTI_ACCESS_);
-
-    /**
      * @brief Include the necessary configuration files
      **/
     require('./config/config.inc.php');
