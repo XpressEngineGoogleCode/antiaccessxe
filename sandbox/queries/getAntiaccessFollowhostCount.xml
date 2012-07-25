@@ -12,6 +12,7 @@
         <condition operation="equal" column="state" var="state" filter="number" pipe="and" />
         <condition operation="equal" column="my_level" var="my_level" filter="number" pipe="and" />
         <condition operation="equal" column="follow_level" var="follow_level" filter="number" pipe="and" />
+        <condition operation="equal" column="rank" var="rank" pipe="and" />
     </conditions>
     <navigation />
 </query>

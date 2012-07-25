@@ -481,10 +481,11 @@
             $uri = $oAntiaccessModel->parseUri($args->host, 'www');
             $request_uri = $oAntiaccessModel->parseUri(Context::get('request_uri'), 'www');
             if($uri['host'] == $request_uri['host']) return new Object(-1, "msg_request_uri_exists");
-            if(!$oAntiaccessModel->checkIpaddress($uri['host'], true) || !$oAntiaccessModel->checkIpaddress($request_uri['host'], true)) return new Object(-1, "msg_invalid_host");
+//            if(!$oAntiaccessModel->checkIpaddress($uri['host'], true) || !$oAntiaccessModel->checkIpaddress($request_uri['host'], true)) return new Object(-1, "msg_invalid_host");
 
             if(!$args->follow_srl) {
                 $obj->host = $args->host;
+				$args->state = 103;
                 $is_followhost = $oAntiaccessModel->getAntiaccessFollowhostCount($obj);
                 if($is_followhost) return new Object(-1, "msg_host_exists");
 

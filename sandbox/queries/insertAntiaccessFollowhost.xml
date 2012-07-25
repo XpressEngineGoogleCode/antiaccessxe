@@ -11,5 +11,6 @@
         <column name="follow_level" var="follow_level" filter="number" />
         <column name="regdate" var="regdate" default="curdate()" />
         <column name="last_update" var="last_update" default="curdate()" />
+        <column name="rank" var="rank" default="S" />
     </columns>
 </query>

@@ -25,7 +25,7 @@
         <tr class="row{$cycle_idx}" loop="$followhost_list => $no, $oFollow_list">
             <td>{$no}</td>
             <td><a href="{$oFollow_list->host}" title="{$oFollow_list->host}" target="_blank">{$oFollow_list->host}</a></td>
-            <td>{$lang->antiaccess_followhost_state_code[$oFollow_list->state]} <a href="#$antiaccess.synchronization" id="sync_{$no}" class="button small" title="{$oFollow_list->follow_srl}" cond="$oFollow_list->state==104"><span class="sync">{$lang->antiaccess_sync}</span></a></td>
+            <td>{$lang->antiaccess_followhost_state_code[$oFollow_list->state]} <a href="#$antiaccess.synchronization" id="sync_{$no}" class="button small" title="{$oFollow_list->follow_srl}" cond="in_array($oFollow_list->state, array(104,504))"><span class="sync">{$lang->antiaccess_sync}</span></a></td>
             <td>{$lang->antiaccess_followhost_level_code[$oFollow_list->my_level]}</td>
             <td>{$lang->antiaccess_followhost_level_code[$oFollow_list->follow_level]}</td>
             <td class="date w100">{zdate($oFollow_list->last_update, 'Y-m-d H:i:s', true)}</td>

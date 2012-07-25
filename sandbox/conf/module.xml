@@ -28,7 +28,9 @@
         <action name="dispAntiaccessAdminBanhost" type="view" standalone="true" />
         <action name="dispAntiaccessAdminFollowhost" type="view" standalone="true" />
         <action name="getAntiaccessBanipApi" type="model" standalone="true" />
+        <action name="setAntiaccessBanipApi" type="controller" standalone="true" />
         <action name="getAntiaccessWhiteipApi" type="model" standalone="true" />
+        <action name="setAntiaccessWhiteipApi" type="controller" standalone="true" />
         <action name="getAntiaccessFollowCall" type="model" standalone="true" />
         <action name="procAntiaccessAdminInsertConfig" type="controller" standalone="true" />
         <action name="procAntiaccessAdminInsertUse" type="controller" standalone="true" />
@@ -51,5 +53,7 @@
         <action name="procAntiaccessAdminSynchronization" type="controller" standalone="true" />
         <action name="procAntiaccess" type="controller" standalone="true" />
         <action name="procAntiaccessSync" type="controller" standalone="true" />
+        <action name="procAntiaccessRankCheck" type="controller" standalone="true" />
+        <action name="procAntiaccessRankCheckApi" type="controller" standalone="true" />
     </actions>
 </module>

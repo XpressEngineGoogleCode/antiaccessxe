@@ -7,4 +7,5 @@
     <column name="follow_level" type="char" size="3" notnull="notnull" />
     <column name="regdate" type="date" index="idx_regdate" />
     <column name="last_update" type="date" index="idx_last_update" />
+    <column name="rank" type="char" size="1" notnull="notnull" default="S" />
 </table>

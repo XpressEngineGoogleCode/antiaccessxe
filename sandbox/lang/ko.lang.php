@@ -203,6 +203,13 @@
         "120" => "정보 삭제",
         "121" => "정보 삭제 완료",
         "122" => "Follow 삭제",
+        "503" => "Follow 요청(S)",
+        "504" => "Follow 요청받음(S)",
+        "505" => "Key 생성(S)",
+        "507" => "Key 전달(S)",
+        "508" => "동기화 시작(S)",
+        "509" => "동기화 중(S)",
+        "510" => "동기화 중(S)",
         "201" => "Ban ip 전달",
         "202" => "Ban ip 전달 완료",
         "211" => "White ip 전달",
@@ -215,6 +222,12 @@
         "404" => "응답없음",
     );
 
+	/* Rank */
+	$lang->antiaccess_rank = "anti-accessXE 동작상태";
+	$lang->antiaccess_rank_distributor = "현재 동작상태는 배포자(Distributor) 입니다.";
+	$lang->antiaccess_rank_subscriber = "현재 동작상태는 구독자(Subscriber) 입니다.";
+	$lang->antiaccess_rank_success = "동작상태 확인을 시도했습니다. 5초 후 확인해주세요.";
+
     /* complete message */
     $lang->success_synchronization = "동기화 진행을 시작합니다.";
 
@@ -222,6 +235,7 @@
     $lang->msg_ipaddress_exists = "이미 존재하는 IP 주소 입니다.";
     $lang->msg_host_exists = "이미 존재하는 HOST 주소 입니다.";
     $lang->msg_follow_exists = "상대방과 이미 동기화하고 있는 Follow Host 주소 입니다.";
+    $lang->msg_not_rank = "동작상태가 서로 구독자(Subscriber) 일경우 Follow가 불가합니다.";
     $lang->msg_request_uri_exists = "본인의 HOST는 사용하실 수 없습니다.";
     $lang->msg_invalid_ipaddress = "잘못된 IP 주소 형식 입니다.";
     $lang->msg_invalid_host = "잘못된 HOST 형식 입니다.\n입력값이 잘못되었거나 현재 접속하고있는 HOST 주소 형식이 잘못 되었습니다.\n잘못된 예) 127.0.0.1";

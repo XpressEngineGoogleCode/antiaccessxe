@@ -1,5 +1,10 @@
 <include target="header.html" />
-
+<block cond="$anti_config->rank">
+<h4 class="xeAdmin">{$lang->antiaccess_rank}</h4>
+<p cond="$anti_config->rank=='D'" style="background-color:#f4f4f4;padding:10px;">{$lang->antiaccess_rank_distributor}</p>
+<p cond="$anti_config->rank=='S'" style="background-color:#f4f4f4;padding:10px;">{$lang->antiaccess_rank_subscriber}</p>
+<span class="btn"><a href="#rankCheck" onclick="$antiaccess.doRankCheck();return false;">동작상태 확인하기</a></span>
+</block>
 <h4 class="xeAdmin">{$lang->antiaccess_use}</h4>
 <table cellspacing="0" id="use_config" class="rowTable" summary="{$lang->antiaccess_use_summary}">
 <caption>{$lang->antiaccess_caption} : use config</caption>

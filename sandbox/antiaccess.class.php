@@ -43,8 +43,12 @@
          * @brief 설치가 이상이 없는지 체크하는 method
          **/
         function checkUpdate() {
+            $oModuleModel = &getModel('module');
 
             if(!is_dir(_XE_PATH_."files/antiaccess/config/")) return true;
+
+            $anti_config = $oModuleModel->getModuleConfig('antiaccess');
+            if(!$anti_config->rank) return true;
 
             return false;
         }
@@ -53,17 +57,33 @@
          * @brief 업데이트 실행
          **/
         function moduleUpdate() {
-
+            $oModuleModel = &getModel('module');
+            $oModuleController = &getController('module');
+            $oAntiaccessModel = &getModel('antiaccess');
+            $anti_config = $oModuleModel->getModuleConfig('antiaccess');
+            
             if(!is_dir(_XE_PATH_."files/antiaccess/config/")) {
-                $oModuleModel = &getModel('module');
-                $anti_config = $oModuleModel->getModuleConfig('antiaccess');
-
                 // 캐시용 index.php에서 처리하기 위해 기본 설정을 파일로 저장
                 $anti_config = serialize($anti_config);
                 $oFileHandler = new FileHandler();
                 $oFileHandler->writeFile(_XE_PATH_."files/antiaccess/config/config", $anti_config, 'w');
                 $oFileHandler->copyFile(_XE_PATH_."modules/antiaccess/tpl/index/index.bak.php", _XE_PATH_."files/antiaccess/index/index.bak.php", 'Y');
             }
+
+            if(!$anti_config->rank) {
+                $anti_config->rank = 'S';
+	            $oModuleController->insertModuleConfig('antiaccess', $anti_config);
+
+	            $body = '<?xml version="1.0" encoding="utf-8" ?>
+	                <methodCall>
+	                <params>
+	                <module><![CDATA[antiaccess]]></module>
+	                <act><![CDATA[procAntiaccessRankCheckApi]]></act>
+	                </params>
+	                </methodCall>';
+	
+	            $buff = $oAntiaccessModel->sendRequest(Context::getRequestUri(), $body, false);
+			}
 
             return new Object(0,'success_updated');
         }
