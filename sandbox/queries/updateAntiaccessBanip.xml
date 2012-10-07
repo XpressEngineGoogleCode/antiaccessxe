@@ -3,7 +3,9 @@
         <table name="antiaccess_ban_ip" />
     </tables>
     <columns>
-        <column name="apply" var="apply" notnull="notnull" />
+        <column name="apply" var="apply" />
+        <column name="country_code" var="country_code" />
+        <column name="public" var="public" />
     </columns>
     <conditions>
         <condition operation="equal" column="ban_srl" var="ban_srl" filter="number" pipe="where" />

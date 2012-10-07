@@ -10,6 +10,7 @@
         var $antiaccess_version = '1.0.3.1';
         var $remote_addr = '';
         var $cache_white_path = "files/cache/antiaccess/white/";
+        var $cache_country_path = "files/cache/antiaccess/country/";
         var $cache_ban_path = "files/cache/antiaccess/ban/";
         var $cache_block_path = "files/cache/antiaccess/block/";
         var $ftpConn = '';
@@ -43,12 +44,20 @@
          * @brief 설치가 이상이 없는지 체크하는 method
          **/
         function checkUpdate() {
+			$oDB = &DB::getInstance();
             $oModuleModel = &getModel('module');
 
             if(!is_dir(_XE_PATH_."files/antiaccess/config/")) return true;
 
             $anti_config = $oModuleModel->getModuleConfig('antiaccess');
             if(!$anti_config->rank) return true;
+
+			if(!$oDB->isColumnExists("antiaccess_access_ip","country_code")) return true;
+			if(!$oDB->isColumnExists("antiaccess_ban_ip","country_code")) return true;
+			if(!$oDB->isColumnExists("antiaccess_white_ip","country_code")) return true;
+			if(!$oDB->isColumnExists("antiaccess_ban_ip","public")) return true;
+			if(!$oDB->isColumnExists("antiaccess_white_ip","public")) return true;
+			if(!$oDB->isColumnExists("antiaccess_follow_host","extra_vars")) return true;
 
             return false;
         }
@@ -57,6 +66,7 @@
          * @brief 업데이트 실행
          **/
         function moduleUpdate() {
+			$oDB = &DB::getInstance();
             $oModuleModel = &getModel('module');
             $oModuleController = &getController('module');
             $oAntiaccessModel = &getModel('antiaccess');
@@ -74,15 +84,39 @@
                 $anti_config->rank = 'S';
 	            $oModuleController->insertModuleConfig('antiaccess', $anti_config);
 
-	            $body = '<?xml version="1.0" encoding="utf-8" ?>
-	                <methodCall>
-	                <params>
-	                <module><![CDATA[antiaccess]]></module>
-	                <act><![CDATA[procAntiaccessRankCheckApi]]></act>
-	                </params>
-	                </methodCall>';
-	
+				// XML
+				$body->act = 'procAntiaccessRankCheckApi';
 	            $buff = $oAntiaccessModel->sendRequest(Context::getRequestUri(), $body, false);
+			}
+
+			if(!$oDB->isColumnExists("antiaccess_access_ip", "country_code"))
+			{
+				$oDB->addColumn('antiaccess_access_ip', 'country_code', 'char', 2, '', true);
+			}
+
+			if(!$oDB->isColumnExists("antiaccess_ban_ip", "country_code"))
+			{
+				$oDB->addColumn('antiaccess_ban_ip', 'country_code', 'char', 2, '', true);
+			}
+
+			if(!$oDB->isColumnExists("antiaccess_white_ip", "country_code"))
+			{
+				$oDB->addColumn('antiaccess_white_ip', 'country_code', 'char', 2, '', true);
+			}
+
+			if(!$oDB->isColumnExists("antiaccess_ban_ip", "public"))
+			{
+				$oDB->addColumn('antiaccess_ban_ip', 'public', 'char', 1, 'N', true);
+			}
+
+			if(!$oDB->isColumnExists("antiaccess_white_ip", "public"))
+			{
+				$oDB->addColumn('antiaccess_white_ip', 'public', 'char', 1, 'N', true);
+			}
+
+			if(!$oDB->isColumnExists("antiaccess_follow_host", "extra_vars"))
+			{
+				$oDB->addColumn('antiaccess_follow_host', 'extra_vars', 'text');
 			}
 
             return new Object(0,'success_updated');

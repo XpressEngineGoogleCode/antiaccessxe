@@ -12,5 +12,6 @@
         <column name="regdate" var="regdate" default="curdate()" />
         <column name="last_update" var="last_update" default="curdate()" />
         <column name="rank" var="rank" default="S" />
+        <column name="extra_vars" var="extra_vars" />
     </columns>
 </query>

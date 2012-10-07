@@ -12,6 +12,7 @@
     $lang->antiaccess_sync = "동기화 하기";
     $lang->antiaccess_apply = "적용";
     $lang->antiaccess_not_apply = "비적용";
+    $lang->antiaccess_public = "공개";
 
     /* header */
     $lang->antiaccess_config = "기본 설정";
@@ -31,6 +32,17 @@
     $lang->antiaccess_use_banned_description = "체크할 경우 기능이 수행 됩니다.";
     $lang->antiaccess_use_white = "비금지 기능 사용";
     $lang->antiaccess_use_white_description = "체크할 경우 기능이 수행 됩니다.";
+    $lang->antiaccess_use_country = "국가금지 기능 사용";
+    $lang->antiaccess_use_country_description = "체크할 경우 기능이 수행 됩니다.";
+
+	$lang->antiaccess_country = "국가 접근 기능";
+	$lang->antiaccess_country_select = "국가 선택";
+	$lang->antiaccess_country_select_total = "전체 국가";
+	$lang->antiaccess_country_selected = "선택한 국가";
+	$lang->antiaccess_country_conn = "접근 여부";
+	$lang->antiaccess_country_conn_block = "선택한 국가의 접근을 차단";
+	$lang->antiaccess_country_conn_white = "선택한 국가만 접근 허용";
+	$lang->antiaccess_country_conn_description = "선택한 국가의 접근 여부를 선택해주세요.";
 
     $lang->antiaccess_header = "차단시 표시할 정보";
     $lang->antiaccess_header_summary = "차단시 표시할 정보를 설정하는 내용 입니다.";
@@ -38,6 +50,8 @@
     $lang->antiaccess_code_description = "403 : Forbidden , 404 : Not Found";
     $lang->antiaccess_msg = "메시지";
     $lang->antiaccess_msg_description = "출력할 메시지를 적어주세요.(HTML 가능)";
+    $lang->antiaccess_forward_url = "URL 이동";
+    $lang->antiaccess_forward_url_description = "이동할 URL을 적어주세요.";
 
     $lang->antiaccess_block = "다중접속 차단";
     $lang->antiaccess_block_summary = "다중 접속을 차단시키는 정보의 등록 내용 입니다.";
@@ -97,6 +111,7 @@
     $lang->antiaccess_source_host = "발생된 HOST";
     $lang->antiaccess_ipaddress = "IP 주소";
     $lang->antiaccess_apply_mode = "적용여부";
+    $lang->antiaccess_public_mode = "공개여부";
     $lang->antiaccess_regdate = "등록일시";
 
     $lang->antiaccess_banip_list = "금지 IP 목록";
@@ -137,6 +152,7 @@
     $lang->antiaccess_banip_config_summary = "금지 IP를 설정하는 내용 입니다.";
     $lang->antiaccess_banip = "금지 IP";
     $lang->antiaccess_banip_description = "금지하려는 IP를 적어주세요.";
+    $lang->antiaccess_public_description = "공개 선택을 체크하시면 다른 Follow host에게 정보를 제공합니다.";
 
     /* White IP Config */
     $lang->antiaccess_whiteip_config = "비금지 IP 설정";

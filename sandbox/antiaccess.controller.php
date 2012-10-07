@@ -28,6 +28,13 @@
              // ban_srl 생성
             if(!$args->ban_srl) $args->ban_srl = getNextSequence();
 
+			// 코드 생성
+			if(!$args->country_code)
+			{
+				$oAntiaccessModel = &getModel('antiaccess');
+				$args->country_code = $oAntiaccessModel->getGeoip($args->ipaddress);
+			}
+
             $output = executeQuery('antiaccess.insertAntiaccessBanip', $args);
             if(!$output->toBool()) {
                 $oDB->rollback();
@@ -116,6 +123,13 @@
 
              // ban_srl 생성
             if(!$args->white_srl) $args->white_srl = getNextSequence();
+
+			// 코드 생성
+			if(!$args->country_code)
+			{
+				$oAntiaccessModel = &getModel('antiaccess');
+				$args->country_code = $oAntiaccessModel->getGeoip($args->ipaddress);
+			}
 
             $output = executeQuery('antiaccess.insertAntiaccessWhiteip', $args);
             if(!$output->toBool()) {
@@ -509,6 +523,9 @@
             if(($anti_config->use->use_white == 'Y' && $oAntiaccessModel->getAntiaccessWhiteipCheck()) || $obj->grant->is_admin == 'Y') return;
 //            if(($anti_config->use->use_white == 'Y' && $oAntiaccessModel->getAntiaccessWhiteipCheck())) return;
 
+            // Country IP check
+			if($anti_config->use->use_country == 'Y' && $oAntiaccessModel->getAntiaccessCountryipCheck()) $this->procAntiaccessStop();
+
             // Ban IP check
             if($anti_config->use->use_banned == 'Y' && $oAntiaccessModel->getAntiaccessBanipCheck()) $this->procAntiaccessStop();
 
@@ -671,7 +688,7 @@
          **/
         function procAntiaccessSync() {
             $args = Context::getRequestVars();
-            debugPrint($args);
+
             $oModuleModel = &getModel('module');
             $oAntiaccessModel = &getModel('antiaccess');
 
@@ -691,6 +708,7 @@
                 break;
                 case 101: // Sync 요청 (Hello packet이 오면 응답을 보내준다)
                     // 서로의 rank가 Subscriber일 경우 follow 금지
+                    if(!$args->rank) $this->add('state_error',403);
                     if($anti_config->rank == 'S' && $args->rank == 'S') $this->add('rank_error',401);
 
                     // Follow Host 신규 동기화 요청시 이미 동기화하고 있는 대상이 있는지 확인
@@ -727,24 +745,12 @@
                     $followhost_info = $oAntiaccessModel->getAntiaccessFollowhostInfo($obj);
                     if($followhost_info && ($followhost_info->state == 122)) {
                         // 동기화 진행을 바로 시도
-                        $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                            <methodCall>
-                            <params>
-                            <module><![CDATA[antiaccess]]></module>
-                            <act><![CDATA[procAntiaccessSync]]></act>
-                            <host><![CDATA[%s]]></host>
-                            <follow_key><![CDATA[%s]]></follow_key>
-                            <state><![CDATA[%s]]></state>
-                            <my_level><![CDATA[%s]]></my_level>
-                            <follow_level><![CDATA[%s]]></follow_level>
-                            </params>
-                            </methodCall>',
-                            Context::get('request_uri'),
-                            $followhost_info->follow_key,
-                            105,
-                            $args->my_level,
-                            $followhost_info->my_level);
-
+						$body->act = 'procAntiaccessSync';
+						$body->host = Context::get('request_uri');
+						$body->follow_key = $followhost_info->follow_key;
+						$body->state = 105;
+						$body->my_level = $args->my_level;
+						$body->follow_level = $followhost_info->my_level;
                         $buff = $oAntiaccessModel->sendRequest($followhost_info->host, $body, false);
 
                         $obj->follow_srl = $followhost_info->follow_srl;
@@ -774,21 +780,11 @@
 
                     if($followhost_info->rank == 'S') {
 	                    // 동기화 진행
-	                    $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-	                        <methodCall>
-	                        <params>
-	                        <module><![CDATA[antiaccess]]></module>
-	                        <act><![CDATA[procAntiaccessSync]]></act>
-	                        <follow_key><![CDATA[%s]]></follow_key>
-	                        <state><![CDATA[%s]]></state>
-	                        <mode><![CDATA[%s]]></mode>
-	                        <page><![CDATA[%s]]></page>
-	                        </params>
-	                        </methodCall>',
-	                        $followhost_info->follow_key,
-	                        509,
-	                        'ban',
-	                        1);
+						$body->act = 'procAntiaccessSync';
+						$body->follow_key = $followhost_info->follow_key;
+						$body->state = 509;
+						$body->mode = 'ban';
+						$body->page = 1;
 	                    $buff = $oAntiaccessModel->sendRequest(Context::get('request_uri'), $body, false);
                     } else {
                     	$this->add('key_complete',506);
@@ -808,21 +804,11 @@
                     $followhost_info = $oAntiaccessModel->getAntiaccessFollowhostInfo($obj);
 
                     // 동기화 진행
-                    $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                        <methodCall>
-                        <params>
-                        <module><![CDATA[antiaccess]]></module>
-                        <act><![CDATA[procAntiaccessSync]]></act>
-                        <follow_key><![CDATA[%s]]></follow_key>
-                        <state><![CDATA[%s]]></state>
-                        <mode><![CDATA[%s]]></mode>
-                        <page><![CDATA[%s]]></page>
-                        </params>
-                        </methodCall>',
-                        $followhost_info->follow_key,
-                        108,
-                        'ban',
-                        1);
+					$body->act = 'procAntiaccessSync';
+					$body->follow_key = $followhost_info->follow_key;
+					$body->state = 108;
+					$body->mode = 'ban';
+					$body->page = 1;
                     $buff = $oAntiaccessModel->sendRequest($followhost_info->host, $body, false);
                 break;
                 case 108: // 동기화 중 (처음 요청자 동기화 시도)
@@ -845,42 +831,22 @@
                     // 나의 동기화가 완료 되었다면 상대방 측으로 동기화 시도 요청
                     if($output->state == 109) {
                         // 동기화 진행
-                        $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                            <methodCall>
-                            <params>
-                            <module><![CDATA[antiaccess]]></module>
-                            <act><![CDATA[procAntiaccessSync]]></act>
-                            <follow_key><![CDATA[%s]]></follow_key>
-                            <state><![CDATA[%s]]></state>
-                            <mode><![CDATA[%s]]></mode>
-                            <page><![CDATA[%s]]></page>
-                            </params>
-                            </methodCall>',
-                            $output->follow_key,
-                            $output->state,
-                            $output->mode,
-                            $output->page);
+						$body->act = 'procAntiaccessSync';
+						$body->follow_key = $output->follow_key;
+						$body->state = $output->state;
+						$body->mode = $output->mode;
+						$body->page = $output->page;
                         $buff = $oAntiaccessModel->sendRequest($output->host, $body, false);
 
                         return;
                     }
 
                     // Ban IP 동기화가 완료되면 White IP 동기화 시도
-                    $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                        <methodCall>
-                        <params>
-                        <module><![CDATA[antiaccess]]></module>
-                        <act><![CDATA[getAntiaccessFollowCall]]></act>
-                        <follow_key><![CDATA[%s]]></follow_key>
-                        <state><![CDATA[%s]]></state>
-                        <mode><![CDATA[%s]]></mode>
-                        <page><![CDATA[%s]]></page>
-                        </params>
-                        </methodCall>',
-                        $output->follow_key,
-                        $output->state,
-                        $output->mode,
-                        $output->page);
+					$body->act = 'procAntiaccessSync';
+					$body->follow_key = $output->follow_key;
+					$body->state = $output->state;
+					$body->mode = $output->mode;
+					$body->page = $output->page;
                     $buff = $oAntiaccessModel->sendRequest($output->host, $body, false);
                 break;
                 case 109: // 동기화 중 (처음 요청자 동기화 완료 후 동기화 시도)
@@ -903,18 +869,9 @@
                     // 동기화가 완료 되었다면 동기화 완료 신호를 보냄
                     if($output->state == 100) {
                         // 동기화 완료 신호를 보냄
-                        $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                            <methodCall>
-                            <params>
-                            <module><![CDATA[antiaccess]]></module>
-                            <act><![CDATA[procAntiaccessSync]]></act>
-                            <follow_key><![CDATA[%s]]></follow_key>
-                            <state><![CDATA[%s]]></state>
-                            </params>
-                            </methodCall>',
-                            $output->follow_key,
-                            100);
-
+						$body->act = 'procAntiaccessSync';
+						$body->follow_key = $output->follow_key;
+						$body->state = 100;
                         $buff = $oAntiaccessModel->sendRequest($output->host, $body, false);
                         $obj->mode = 'sync';
 
@@ -926,21 +883,11 @@
                     }
 
                     // Ban IP 동기화가 완료되면 White IP 동기화 시도
-                    $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                        <methodCall>
-                        <params>
-                        <module><![CDATA[antiaccess]]></module>
-                        <act><![CDATA[getAntiaccessFollowCall]]></act>
-                        <follow_key><![CDATA[%s]]></follow_key>
-                        <state><![CDATA[%s]]></state>
-                        <mode><![CDATA[%s]]></mode>
-                        <page><![CDATA[%s]]></page>
-                        </params>
-                        </methodCall>',
-                        $output->follow_key,
-                        $output->state,
-                        $output->mode,
-                        $output->page);
+					$body->act = 'getAntiaccessFollowCall';
+					$body->follow_key = $output->follow_key;
+					$body->state = $output->state;
+					$body->mode = $output->mode;
+					$body->page = $output->page;
                     $buff = $oAntiaccessModel->sendRequest($output->host, $body, false);
                 break;
                 case 110: // Follow 정보 수정 (한쪽에서 수정할때 다른 한쪽으로 값을 보내 적용)
@@ -974,7 +921,7 @@
                     if(!$followhost_info) return;
                     $my_level = $followhost_info->my_level;
 
-                    $obj->mode = 'sync';
+                    //$obj->mode = 'sync';
 
                     // 이미 해당 IP가 존재한다면 수행 중단
                     $obj->ipaddress = $args->ipaddress;
@@ -994,6 +941,10 @@
                     $follow_host = $oAntiaccessModel->parseUri($args->follow_host, 'www');
                     $obj->follow_host = $follow_host['host'];
 
+					// 추가 값 선언
+					$obj->country_code = $args->country_code;
+					$obj->public = 'Y';
+
                     // 캐시 이용이 차단과 동시에 사용이라면 캐시 생성
                     if($anti_config->cache->cache_type == 1 && $obj->apply == 'Y') @FileHandler::writeFile($this->cache_ban_path.$obj->ipaddress, "Y", 'w');
 
@@ -1006,7 +957,7 @@
                     $followhost_info = $oAntiaccessModel->getAntiaccessFollowhostInfo($obj);
                     if(!$followhost_info) return;
 
-                    $obj->mode = 'sync';
+                    //$obj->mode = 'sync';
 
                     // 이미 해당 IP가 존재한다면 수행 중단
                     $obj->ipaddress = $args->ipaddress;
@@ -1026,6 +977,10 @@
                     $follow_host = $oAntiaccessModel->parseUri($args->follow_host, 'www');
                     $obj->follow_host = $follow_host['host'];
 
+					// 추가 값 선언
+					$obj->country_code = $args->country_code;
+					$obj->public = 'Y';
+
                     // 캐시 이용이 차단과 동시에 사용이라면 캐시 생성
                     if($anti_config->cache->cache_type == 1 && $obj->apply == 'Y') @FileHandler::writeFile($this->cache_white_path.$obj->ipaddress, "Y", 'w');
 
@@ -1038,7 +993,7 @@
                     $is_followhost = $oAntiaccessModel->getAntiaccessFollowhostCount($obj);
                     if(!$is_followhost) return;
 
-                    $obj->mode = 'sync';
+                    //$obj->mode = 'sync';
 
                     // 삭제를 요청한 IP의 Source host가 다를 경우는 수행 중단
                     $obj->ipaddress = $args->ipaddress;
@@ -1058,7 +1013,7 @@
                     $is_followhost = $oAntiaccessModel->getAntiaccessFollowhostCount($obj);
                     if(!$is_followhost) return;
 
-                    $obj->mode = 'sync';
+                    //$obj->mode = 'sync';
 
                     // 삭제를 요청한 IP의 Source host가 다를 경우는 수행 중단
                     $obj->ipaddress = $args->ipaddress;
@@ -1071,9 +1026,6 @@
 
                     $this->deleteAntiaccessWhiteip($obj);
                     $this->add('state',312); // White ip 삭제 완료
-                break;
-                default: // state code 값이 선언되어있지 않은 경우는 error 404를 보냄
-                    $this->add('error',404);
                 break;
                 case 509:
                     $obj->mode = 'sync';
@@ -1091,20 +1043,10 @@
                     if($args->mode == 'sync') return;
 
                     // 동기화 중 신호를 보냄
-                    $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                        <methodCall>
-                        <params>
-                        <module><![CDATA[antiaccess]]></module>
-                        <act><![CDATA[procAntiaccessSync]]></act>
-                        <follow_key><![CDATA[%s]]></follow_key>
-                        <mode><![CDATA[%s]]></mode>
-                        <state><![CDATA[%s]]></state>
-                        </params>
-                        </methodCall>',
-                        $followhost_info->follow_key,
-                        'sync',
-                        509);
-
+					$body->act = 'procAntiaccessSync';
+					$body->follow_key = $followhost_info->follow_key;
+					$body->mode = 'sync';
+					$body->state = 509;
                     $buff = $oAntiaccessModel->sendRequest($followhost_info->host, $body, true);
 
                     // 동기화 모드를 처음은 ban 그다음은 white순으로 동기화진행
@@ -1115,42 +1057,22 @@
                     // 나의 동기화가 완료 되었다면 상대방 측으로 동기화 시도 요청
                     if($output->state == 510) {
                         // 동기화 진행
-                        $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                            <methodCall>
-                            <params>
-                            <module><![CDATA[antiaccess]]></module>
-                            <act><![CDATA[procAntiaccessSync]]></act>
-                            <follow_key><![CDATA[%s]]></follow_key>
-                            <state><![CDATA[%s]]></state>
-                            <mode><![CDATA[%s]]></mode>
-                            <page><![CDATA[%s]]></page>
-                            </params>
-                            </methodCall>',
-                            $output->follow_key,
-                            $output->state,
-                            $output->mode,
-                            $output->page);
+						$body->act = 'procAntiaccessSync';
+						$body->follow_key = $output->follow_key;
+						$body->state = $output->state;
+						$body->mode = $output->mode;
+						$body->page = $output->page;
                         $buff = $oAntiaccessModel->sendRequest(Context::get('request_uri'), $body, false);
 
                         return;
                     }
 
                     // Ban IP 동기화가 완료되면 White IP 동기화 시도
-                    $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                        <methodCall>
-                        <params>
-                        <module><![CDATA[antiaccess]]></module>
-                        <act><![CDATA[procAntiaccessSync]]></act>
-                        <follow_key><![CDATA[%s]]></follow_key>
-                        <state><![CDATA[%s]]></state>
-                        <mode><![CDATA[%s]]></mode>
-                        <page><![CDATA[%s]]></page>
-                        </params>
-                        </methodCall>',
-                        $output->follow_key,
-                        $output->state,
-                        $output->mode,
-                        $output->page);
+					$body->act = 'procAntiaccessSync';
+					$body->follow_key = $output->follow_key;
+					$body->state = $output->state;
+					$body->mode = $output->mode;
+					$body->page = $output->page;
                     $buff = $oAntiaccessModel->sendRequest(Context::get('request_uri'), $body, false);
                 break;
                 case 510: // 동기화 중 (처음 요청자 동기화 완료 후 동기화 시도)
@@ -1168,20 +1090,10 @@
                     if($args->mode == 'sync') return;
 
                     // 동기화 중 신호를 보냄
-                    $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                        <methodCall>
-                        <params>
-                        <module><![CDATA[antiaccess]]></module>
-                        <act><![CDATA[procAntiaccessSync]]></act>
-                        <follow_key><![CDATA[%s]]></follow_key>
-                        <mode><![CDATA[%s]]></mode>
-                        <state><![CDATA[%s]]></state>
-                        </params>
-                        </methodCall>',
-                        $followhost_info->follow_key,
-                        'sync',
-                        510);
-
+					$body->act = 'procAntiaccessSync';
+					$body->follow_key = $followhost_info->follow_key;
+					$body->mode = 'sync';
+					$body->state = 510;
                     $buff = $oAntiaccessModel->sendRequest($followhost_info->host, $body, true);
 
                     // 동기화 모드를 처음은 ban 그다음은 white순으로 동기화진행
@@ -1192,18 +1104,9 @@
                     // 동기화가 완료 되었다면 동기화 완료 신호를 보냄
                     if($output->state == 100) {
                         // 동기화 완료 신호를 보냄
-                        $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                            <methodCall>
-                            <params>
-                            <module><![CDATA[antiaccess]]></module>
-                            <act><![CDATA[procAntiaccessSync]]></act>
-                            <follow_key><![CDATA[%s]]></follow_key>
-                            <state><![CDATA[%s]]></state>
-                            </params>
-                            </methodCall>',
-                            $output->follow_key,
-                            100);
-
+						$body->act = 'procAntiaccessSync';
+						$body->follow_key = $output->follow_key;
+						$body->state = 100;
                         $buff = $oAntiaccessModel->sendRequest($output->host, $body, true);
                         $obj->mode = 'sync';
 
@@ -1215,22 +1118,15 @@
                     }
 
                     // Ban IP 동기화가 완료되면 White IP 동기화 시도
-                    $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                        <methodCall>
-                        <params>
-                        <module><![CDATA[antiaccess]]></module>
-                        <act><![CDATA[procAntiaccessSync]]></act>
-                        <follow_key><![CDATA[%s]]></follow_key>
-                        <state><![CDATA[%s]]></state>
-                        <mode><![CDATA[%s]]></mode>
-                        <page><![CDATA[%s]]></page>
-                        </params>
-                        </methodCall>',
-                        $output->follow_key,
-                        $output->state,
-                        $output->mode,
-                        $output->page);
+					$body->act = 'procAntiaccessSync';
+					$body->follow_key = $output->follow_key;
+					$body->state = $output->state;
+					$body->mode = $output->mode;
+					$body->page = $output->page;
                     $buff = $oAntiaccessModel->sendRequest(Context::get('request_uri'), $body, false);
+                break;
+                default: // state code 값이 선언되어있지 않은 경우는 error 404를 보냄
+                    $this->add('error',404);
                 break;
             }
         }
@@ -1259,21 +1155,13 @@
 
             // Ban IP 적용 설정 (Ban IP를 적용하도록 설정한 level만 진행)
             if(in_array($followhost_info->my_level, array(101,102,103,104,111,112,113,114,121,122,123,124))) {
-                $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                    <methodCall>
-                    <params>
-                    <module><![CDATA[antiaccess]]></module>
-                    <act><![CDATA[getAntiaccessBanipApi]]></act>
-                    <follow_key><![CDATA[%s]]></follow_key>
-                    <not_follow_host><![CDATA[%s]]></not_follow_host>
-                    <is_follow_host><![CDATA[%s]]></is_follow_host>
-                    <page><![CDATA[%s]]></page>
-                    </params>
-                    </methodCall>',
-                    $followhost_info->follow_key,
-                    $not_follow_host,
-                    $is_follow_host,
-                    $args->page);
+
+				// XML
+				$body->act = 'getAntiaccessBanipApi';
+				$body->follow_key = $followhost_info->follow_key;
+				$body->not_follow_host = $not_follow_host;
+				$body->is_follow_host = $is_follow_host;
+				$body->page = $args->page;
                 $buff = $oAntiaccessModel->sendRequest($followhost_info->host, $body, true);
                 
                 // 정보를 받지 못할 경우 다음 스탭을 진행
@@ -1306,6 +1194,9 @@
                     $is_banip = $oAntiaccessModel->getAntiaccessBanipCount($obj);
                     if($is_banip) continue;
 
+					// 국가코드 구하기
+					if($val->country_code->body) $obj->country_code = $val->country_code->body;
+
                     // 추가할 정보를 만듬
                     $obj->source_host = $val->source_host->body;
                     $follow_host = $oAntiaccessModel->parseUri($followhost_info->host, 'www');
@@ -1326,6 +1217,15 @@
                 // 사이클이 돌때마다 부하를 방지하기 위해 딜레이를 줌
                 sleep(2);
 
+				$follow_obj->follow_srl = $followhost_info->follow_srl;
+				$follow_obj->mode = 'sync';
+				$follow_obj->extra_vars->type = 'ban';
+				$follow_obj->extra_vars->total_page = $buff->response->total_page->body;
+				$follow_obj->extra_vars->page = $args->page;
+				$follow_obj->extra_vars->state = 'my';
+				$follow_obj->extra_vars = serialize($follow_obj->extra_vars);
+				$this->updateAntiaccessFollowhost($follow_obj);
+
                 // 보내준 내용의 전체 페이지수와 요청 페이지 수가 같을 경우 다음 스텝을 진행
                 if($buff->response->total_page->body <= $args->page) {
                     $output->follow_key = $followhost_info->follow_key;
@@ -1339,39 +1239,19 @@
 
                 if($followhost_info->rank == 'S') {	
                 	// 동기화 진행 (상대방이 구독자(Subscriber)일 경우 본인의 주소로 내용의 페이지를 증가시켜 새로운 건을 받음)
-			        $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-			            <methodCall>
-			            <params>
-			            <module><![CDATA[antiaccess]]></module>
-			            <act><![CDATA[procAntiaccessSync]]></act>
-			            <follow_key><![CDATA[%s]]></follow_key>
-			            <state><![CDATA[%s]]></state>
-			            <mode><![CDATA[%s]]></mode>
-			            <page><![CDATA[%s]]></page>
-			            </params>
-			            </methodCall>',
-			            $followhost_info->follow_key,
-			            $state,
-			            'ban',
-			            $args->page+1);
+					$body->act = 'procAntiaccessSync';
+					$body->follow_key = $followhost_info->follow_key;
+					$body->state = $state;
+					$body->mode = 'ban';
+					$body->page = $args->page+1;
 			        $buff = $oAntiaccessModel->sendRequest(Context::get('request_uri'), $body, false);
 				} else {
 	                // 동기화 진행 (내용의 페이지를 증가시켜 새로운 건을 받음)
-	                $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-	                    <methodCall>
-	                    <params>
-	                    <module><![CDATA[antiaccess]]></module>
-	                    <act><![CDATA[getAntiaccessFollowCall]]></act>
-	                    <follow_key><![CDATA[%s]]></follow_key>
-	                    <state><![CDATA[%s]]></state>
-	                    <mode><![CDATA[%s]]></mode>
-	                    <page><![CDATA[%s]]></page>
-	                    </params>
-	                    </methodCall>',
-	                    $followhost_info->follow_key,
-	                    $state,
-	                    'ban',
-	                    $args->page+1);
+					$body->act = 'getAntiaccessFollowCall';
+					$body->follow_key = $followhost_info->follow_key;
+					$body->state = $state;
+					$body->mode = 'ban';
+					$body->page = $args->page+1;
 	                $buff = $oAntiaccessModel->sendRequest($followhost_info->host, $body, false);
 				}
 
@@ -1419,18 +1299,22 @@
 				if($is_follow_host == 'Y') $ban_obj->is_follow_host = array($followhost_info->host);
 				$ban_output = $oAntiaccessModel->getAntiaccessBanipList($ban_obj);
 
-                $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                    <methodCall>
-                    <params>
-                    <module><![CDATA[antiaccess]]></module>
-                    <act><![CDATA[setAntiaccessBanipApi]]></act>
-                    <follow_key><![CDATA[%s]]></follow_key>
-                    <output><![CDATA[%s]]></output>
-                    </params>
-                    </methodCall>',
-                    $followhost_info->follow_key,
-                    serialize($ban_output->data));
+				// XML
+				$body->act = 'setAntiaccessBanipApi';
+				$body->follow_key = $followhost_info->follow_key;
+				$body->output = serialize($ban_output->data);
+				$body->total_page = $ban_output->page_navigation->total_page;
+				$body->page = $args->page;
                 $buff = $oAntiaccessModel->sendRequest($followhost_info->host, $body, true);
+
+				$follow_obj->follow_srl = $followhost_info->follow_srl;
+				$follow_obj->mode = 'sync';
+				$follow_obj->extra_vars->type = 'ban';
+				$follow_obj->extra_vars->total_page = $ban_output->page_navigation->total_page;
+				$follow_obj->extra_vars->page = $args->page;
+				$follow_obj->extra_vars->state = 'follower';
+				$follow_obj->extra_vars = serialize($follow_obj->extra_vars);
+				$this->updateAntiaccessFollowhost($follow_obj);
 
                 // 더 이상 정보가 없다면 (전체 페이지 수와 요청 페이지 수가 같다면) 처리를 종료
 				if($ban_output->page_navigation->total_page <= $args->page) {
@@ -1446,21 +1330,11 @@
 				sleep(5);
 
                 // 동기화 진행
-                $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                    <methodCall>
-                    <params>
-                    <module><![CDATA[antiaccess]]></module>
-                    <act><![CDATA[procAntiaccessSync]]></act>
-                    <follow_key><![CDATA[%s]]></follow_key>
-                    <state><![CDATA[%s]]></state>
-                    <mode><![CDATA[%s]]></mode>
-                    <page><![CDATA[%s]]></page>
-                    </params>
-                    </methodCall>',
-                    $followhost_info->follow_key,
-                    509,
-                    'ban',
-                    $args->page+1);
+				$body->act = 'procAntiaccessSync';
+				$body->follow_key = $followhost_info->follow_key;
+				$body->state = 509;
+				$body->mode = 'ban';
+				$body->page = $args->page+1;
                 $buff = $oAntiaccessModel->sendRequest(Context::get('request_uri'), $body, false);
 
                 return false;
@@ -1500,21 +1374,13 @@
 
             // White IP 적용 설정 (White IP를 적용하도록 설정한 level만 진행)
             if(in_array($followhost_info->my_level, array(101,102,105,106,111,112,115,116,121,122,125,126))) {
-                $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                    <methodCall>
-                    <params>
-                    <module><![CDATA[antiaccess]]></module>
-                    <act><![CDATA[getAntiaccessWhiteipApi]]></act>
-                    <follow_key><![CDATA[%s]]></follow_key>
-                    <not_follow_host><![CDATA[%s]]></not_follow_host>
-                    <is_follow_host><![CDATA[%s]]></is_follow_host>
-                    <page><![CDATA[%s]]></page>
-                    </params>
-                    </methodCall>',
-                    $followhost_info->follow_key,
-                    $not_follow_host,
-                    $is_follow_host,
-                    $args->page);
+
+				// XML
+				$body->act = 'getAntiaccessWhiteipApi';
+				$body->follow_key = $followhost_info->follow_key;
+				$body->not_follow_host = $not_follow_host;
+				$body->is_follow_host = $is_follow_host;
+				$body->page = $args->page;
                 $buff = $oAntiaccessModel->sendRequest($followhost_info->host, $body, true);
 
                 // 정보를 받지 못할 경우 다음 스탭을 진행
@@ -1550,6 +1416,9 @@
                     $is_whiteip = $oAntiaccessModel->getAntiaccessWhiteipCount($obj);
                     if($is_whiteip) continue;
 
+					// 국가코드 구하기
+					if($val->country_code->body) $obj->country_code = $val->country_code->body;
+
                     // 추가할 정보를 만듬
                     $obj->source_host = $val->source_host->body;
                     $follow_host = $oAntiaccessModel->parseUri($followhost_info->host, 'www');
@@ -1570,6 +1439,15 @@
                 // 사이클이 돌때마다 부하를 방지하기 위해 딜레이를 줌
                 sleep(2);
 
+				$follow_obj->follow_srl = $followhost_info->follow_srl;
+				$follow_obj->mode = 'sync';
+				$follow_obj->extra_vars->type = 'white';
+				$follow_obj->extra_vars->total_page = $buff->response->total_page->body;
+				$follow_obj->extra_vars->page = $args->page;
+				$follow_obj->extra_vars->state = 'my';
+				$follow_obj->extra_vars = serialize($follow_obj->extra_vars);
+				$this->updateAntiaccessFollowhost($follow_obj);
+
                 // 보내준 내용의 전체 페이지수와 요청 페이지 수가 같을 경우 다음 스텝을 진행
                 if($buff->response->total_page->body <= $args->page) {
                     $output->follow_key = $followhost_info->follow_key;
@@ -1587,40 +1465,19 @@
 
                 if($followhost_info->rank == 'S') {	
                 	// 동기화 진행 (상대방이 구독자(Subscriber)일 경우 본인의 주소로 내용의 페이지를 증가시켜 새로운 건을 받음)
-			        $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-			            <methodCall>
-			            <params>
-			            <module><![CDATA[antiaccess]]></module>
-			            <act><![CDATA[procAntiaccessSync]]></act>
-			            <follow_key><![CDATA[%s]]></follow_key>
-			            <state><![CDATA[%s]]></state>
-			            <mode><![CDATA[%s]]></mode>
-			            <page><![CDATA[%s]]></page>
-			            </params>
-			            </methodCall>',
-			            $followhost_info->follow_key,
-			            $state,
-			            'white',
-			            $args->page+1);
-			
+					$body->act = 'procAntiaccessSync';
+					$body->follow_key = $followhost_info->follow_key;
+					$body->state = $state;
+					$body->mode = 'white';
+					$body->page = $args->page+1;
 			        $buff = $oAntiaccessModel->sendRequest(Context::get('request_uri'), $body, false);
 				} else {
 	                // 동기화 진행 (내용의 페이지를 증가시켜 새로운 건을 받음)
-	                $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-	                    <methodCall>
-	                    <params>
-	                    <module><![CDATA[antiaccess]]></module>
-	                    <act><![CDATA[getAntiaccessFollowCall]]></act>
-	                    <follow_key><![CDATA[%s]]></follow_key>
-	                    <state><![CDATA[%s]]></state>
-	                    <mode><![CDATA[%s]]></mode>
-	                    <page><![CDATA[%s]]></page>
-	                    </params>
-	                    </methodCall>',
-	                    $followhost_info->follow_key,
-	                    $state,
-	                    'white',
-	                    $args->page+1);
+					$body->act = 'getAntiaccessFollowCall';
+					$body->follow_key = $followhost_info->follow_key;
+					$body->state = $state;
+					$body->mode = 'white';
+					$body->page = $args->page+1;
 	                $buff = $oAntiaccessModel->sendRequest($followhost_info->host, $body, false);
 				}
 
@@ -1671,19 +1528,23 @@
 				if($not_follow_host == 'Y') $ban_obj->not_follow_host = array($followhost_info->host);
 				if($is_follow_host == 'Y') $ban_obj->is_follow_host = array($followhost_info->host);
 				$white_output = $oAntiaccessModel->getAntiaccessWhiteipList($white_obj);
-				
-                $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                    <methodCall>
-                    <params>
-                    <module><![CDATA[antiaccess]]></module>
-                    <act><![CDATA[setAntiaccessWhiteipApi]]></act>
-                    <follow_key><![CDATA[%s]]></follow_key>
-                    <output><![CDATA[%s]]></output>
-                    </params>
-                    </methodCall>',
-                    $followhost_info->follow_key,
-                    serialize($white_output->data));
+
+				// XML
+				$body->act = 'setAntiaccessWhiteipApi';
+				$body->follow_key = $followhost_info->follow_key;
+				$body->output = serialize($white_output->data);
+				$body->total_page = $white_output->page_navigation->total_page;
+				$body->page = $args->page;
                 $buff = $oAntiaccessModel->sendRequest($followhost_info->host, $body, true);
+
+				$follow_obj->follow_srl = $followhost_info->follow_srl;
+				$follow_obj->mode = 'sync';
+				$follow_obj->extra_vars->type = 'white';
+				$follow_obj->extra_vars->total_page = $white_output->page_navigation->total_page;
+				$follow_obj->extra_vars->page = $args->page;
+				$follow_obj->extra_vars->state = 'follower';
+				$follow_obj->extra_vars = serialize($follow_obj->extra_vars);
+				$this->updateAntiaccessFollowhost($follow_obj);
 
                 // 더 이상 정보가 없다면 (전체 페이지 수와 요청 페이지 수가 같다면) 처리를 종료
 				if($white_output->page_navigation->total_page <= $args->page) {
@@ -1699,21 +1560,11 @@
 				sleep(5);
 
                 // 동기화 진행
-                $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                    <methodCall>
-                    <params>
-                    <module><![CDATA[antiaccess]]></module>
-                    <act><![CDATA[procAntiaccessSync]]></act>
-                    <follow_key><![CDATA[%s]]></follow_key>
-                    <state><![CDATA[%s]]></state>
-                    <mode><![CDATA[%s]]></mode>
-                    <page><![CDATA[%s]]></page>
-                    </params>
-                    </methodCall>',
-                    $followhost_info->follow_key,
-                    510,
-                    'white',
-                    $args->page+1);
+				$body->act = 'procAntiaccessSync';
+				$body->follow_key = $followhost_info->follow_key;
+				$body->state = 510;
+				$body->mode = 'white';
+				$body->page = $args->page+1;
                 $buff = $oAntiaccessModel->sendRequest(Context::get('request_uri'), $body, false);
 
                 return false;
@@ -1746,41 +1597,20 @@
 
             switch($followhost_info->state) {
                 case 100: // 동기화 완료 상태에서 수정일 경우
-                    $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                        <methodCall>
-                        <params>
-                        <module><![CDATA[antiaccess]]></module>
-                        <act><![CDATA[procAntiaccessSync]]></act>
-                        <follow_key><![CDATA[%s]]></follow_key>
-                        <state><![CDATA[%s]]></state>
-                        <my_level><![CDATA[%s]]></my_level>
-                        </params>
-                        </methodCall>',
-                        $followhost_info->follow_key,
-                        110,
-                        $followhost_info->my_level);
-
                     // 상대방에게 수정 요청을 보냄 (단, 완료 값인 111이 아닐 경우는 수정 중단)
+					$body->act = 'procAntiaccessSync';
+					$body->follow_key = $followhost_info->follow_key;
+					$body->state = 110;
+					$body->my_level = $followhost_info->my_level;
                     $buff = $oAntiaccessModel->sendRequest($followhost_info->host, $body, true);
                     if(!$buff || $buff->response->state->body != 111) return new Object(-1, "msg_fail_to_update");
                 break;
                 case 104: // Follow에게 Key를 생성해서 보내고 동기화 시작 준비를 함
-                    $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                        <methodCall>
-                        <params>
-                        <module><![CDATA[antiaccess]]></module>
-                        <act><![CDATA[procAntiaccessSync]]></act>
-                        <host><![CDATA[%s]]></host>
-                        <follow_key><![CDATA[%s]]></follow_key>
-                        <state><![CDATA[%s]]></state>
-                        <my_level><![CDATA[%s]]></my_level>
-                        </params>
-                        </methodCall>',
-                        Context::get('request_uri'),
-                        $followhost_info->follow_key,
-                        105,
-                        $followhost_info->my_level);
-
+					$body->act = 'procAntiaccessSync';
+					$body->host = Context::get('request_uri');
+					$body->follow_key = $followhost_info->follow_key;
+					$body->state = 105;
+					$body->my_level = $followhost_info->my_level;
                     $buff = $oAntiaccessModel->sendRequest($followhost_info->host, $body, false);
                     $args->mode = 'sync';
 
@@ -1789,41 +1619,21 @@
                     $this->updateAntiaccessFollowhost($args);
                 break;
                 case 504: // Follow에게 Key를 생성해서 보내고 동기화 시작 준비를 함
-                    $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                        <methodCall>
-                        <params>
-                        <module><![CDATA[antiaccess]]></module>
-                        <act><![CDATA[procAntiaccessSync]]></act>
-                        <host><![CDATA[%s]]></host>
-                        <follow_key><![CDATA[%s]]></follow_key>
-                        <state><![CDATA[%s]]></state>
-                        <my_level><![CDATA[%s]]></my_level>
-                        </params>
-                        </methodCall>',
-                        Context::get('request_uri'),
-                        $followhost_info->follow_key,
-                        505,
-                        $followhost_info->my_level);
+					$body->act = 'procAntiaccessSync';
+					$body->host = Context::get('request_uri');
+					$body->follow_key = $followhost_info->follow_key;
+					$body->state = 505;
+					$body->my_level = $followhost_info->my_level;
 
                     if($followhost_info->rank == 'S') {
 	                    $buff = $oAntiaccessModel->sendRequest($followhost_info->host, $body, true);
 			            if($buff->response->key_complete->body == 506) {
 		                    // 동기화 진행
-		                    $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-		                        <methodCall>
-		                        <params>
-		                        <module><![CDATA[antiaccess]]></module>
-		                        <act><![CDATA[procAntiaccessSync]]></act>
-		                        <follow_key><![CDATA[%s]]></follow_key>
-		                        <state><![CDATA[%s]]></state>
-		                        <mode><![CDATA[%s]]></mode>
-		                        <page><![CDATA[%s]]></page>
-		                        </params>
-		                        </methodCall>',
-		                        $followhost_info->follow_key,
-		                        509,
-		                        'ban',
-		                        1);
+							$body->act = 'procAntiaccessSync';
+							$body->follow_key = $followhost_info->follow_key;
+							$body->state = 509;
+							$body->mode = 'ban';
+							$body->page = 1;
 		                    $buff = $oAntiaccessModel->sendRequest(Context::get('request_uri'), $body, false);
 			            } else {
 							 return new Object(-1, "msg_not_response");
@@ -1852,20 +1662,9 @@
             $followhost_info = $oAntiaccessModel->getAntiaccessFollowhostInfo($args);
 
             // Follow Host 삭제 정보를 보냄
-            $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                <methodCall>
-                <params>
-                <module><![CDATA[antiaccess]]></module>
-                <act><![CDATA[procAntiaccessSync]]></act>
-                <host><![CDATA[%s]]></host>
-                <follow_key><![CDATA[%s]]></follow_key>
-                <state><![CDATA[%s]]></state>
-                </params>
-                </methodCall>',
-                Context::get('request_uri'),
-                $followhost_info->follow_key,
-                120);
-
+			$body->act = 'procAntiaccessSync';
+			$body->host = Context::get('request_uri');
+			$body->state = 120;
             $buff = $oAntiaccessModel->sendRequest($followhost_info->host, $body, true);
         }
 
@@ -1897,23 +1696,13 @@
                 if(Context::get('not_follow_host') == 'Y' && !$obj->follow_host) continue;
 
                 // Ban ip 전달
-                $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                    <methodCall>
-                    <params>
-                    <module><![CDATA[antiaccess]]></module>
-                    <act><![CDATA[procAntiaccessSync]]></act>
-                    <follow_key><![CDATA[%s]]></follow_key>
-                    <ipaddress><![CDATA[%s]]></ipaddress>
-                    <source_host><![CDATA[%s]]></source_host>
-                    <follow_host><![CDATA[%s]]></follow_host>
-                    <state><![CDATA[%s]]></state>
-                    </params>
-                    </methodCall>',
-                    $val->follow_key,
-                    $obj->ipaddress,
-                    $obj->source_host,
-                    Context::get('request_uri'),
-                    201);
+				$body->act = 'procAntiaccessSync';
+				$body->follow_key = $val->follow_key;
+				$body->ipaddress = $obj->ipaddress;
+				$body->country_code = $obj->country_code;
+				$body->source_host = $obj->source_host;
+				$body->follow_host = Context::get('request_uri');
+				$body->state = 201;
 				if($val->rank == 'S') $buff = $oAntiaccessModel->sendRequest($val->host, $body, true);
                 else $buff = $oAntiaccessModel->sendRequest($val->host, $body, false);
             }
@@ -1935,7 +1724,6 @@
             // 동기화가 안된 state code일 경우를 제외
             $args->not_state = array(103,104,105,106,122);
             $output = $oAntiaccessModel->getAntiaccessFollowhostTotal($args);
-
             foreach($output as $val) {
                 // follow state, my_level에 따른 적용값을 선언
                 $oAntiaccessModel->getAntiaccessApplyMode($val->follow_level);
@@ -1948,24 +1736,13 @@
                 if(Context::get('not_follow_host') == 'Y' && !$obj->follow_host) continue;
 
                 // White ip 전달
-                $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                    <methodCall>
-                    <params>
-                    <module><![CDATA[antiaccess]]></module>
-                    <act><![CDATA[procAntiaccessSync]]></act>
-                    <follow_key><![CDATA[%s]]></follow_key>
-                    <ipaddress><![CDATA[%s]]></ipaddress>
-                    <source_host><![CDATA[%s]]></source_host>
-                    <follow_host><![CDATA[%s]]></follow_host>
-                    <state><![CDATA[%s]]></state>
-                    </params>
-                    </methodCall>',
-                    $val->follow_key,
-                    $obj->ipaddress,
-                    $obj->source_host,
-                    Context::get('request_uri'),
-                    211);
-
+				$body->act = 'procAntiaccessSync';
+				$body->follow_key = $val->follow_key;
+				$body->ipaddress = $obj->ipaddress;
+				$body->country_code = $obj->country_code;
+				$body->source_host = $obj->source_host;
+				$body->follow_host = Context::get('request_uri');
+				$body->state = 211;
                 if($val->rank == 'S') $buff = $oAntiaccessModel->sendRequest($val->host, $body, true);
                 else $buff = $oAntiaccessModel->sendRequest($val->host, $body, false);
             }
@@ -1975,6 +1752,7 @@
          * @brief Anti-accessXE Ban IP delete push
          **/
         function deleteAntiaccessBanipPush(&$obj) {
+            if($obj->mode) return;
             $oAntiaccessModel = &getModel('antiaccess');
 
             // 직접 삭제하는 경우
@@ -1985,6 +1763,8 @@
                     if(!$banip_info) continue;
                     // 해당 IP를 최초 생성하지 않았다면 다음을 진행
                     if($banip_info->follow_host) continue;
+					// 공개한 IP가 아니면 다음을 진행
+					if($banip_info->public != 'Y') continue;
 
                     // 삭제된 IP를 보낼 Follow 대상자 중 IP를 보내준 Follow Host를 제외 함
                     if($obj->follow_key) $args->not_follow_key = $obj->follow_key;
@@ -1998,22 +1778,11 @@
                         if(Context::get('is_ip_type') == '' || Context::get('is_ip_type') == 'white') continue;
 
                         // Ban ip 삭제 정보를 보냄
-                        $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                            <methodCall>
-                            <params>
-                            <module><![CDATA[antiaccess]]></module>
-                            <act><![CDATA[procAntiaccessSync]]></act>
-                            <follow_key><![CDATA[%s]]></follow_key>
-                            <ipaddress><![CDATA[%s]]></ipaddress>
-                            <source_host><![CDATA[%s]]></source_host>
-                            <state><![CDATA[%s]]></state>
-                            </params>
-                            </methodCall>',
-                            $val->follow_key,
-                            $banip_info->ipaddress,
-                            $banip_info->source_host,
-                            301);
-
+						$body->act = 'procAntiaccessSync';
+						$body->follow_key = $val->follow_key;
+						$body->ipaddress = $banip_info->ipaddress;
+						$body->source_host = $banip_info->source_host;
+						$body->state = 301;
                         if($val->rank == 'S') $buff = $oAntiaccessModel->sendRequest($val->host, $body, true);
                         else $buff = $oAntiaccessModel->sendRequest($val->host, $body, false);
                     }
@@ -2034,22 +1803,11 @@
                     if(Context::get('is_ip_type') == '' || Context::get('is_ip_type') == 'white') continue;
 
                     // Ban ip 삭제 정보를 보냄
-                    $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                        <methodCall>
-                        <params>
-                        <module><![CDATA[antiaccess]]></module>
-                        <act><![CDATA[procAntiaccessSync]]></act>
-                        <follow_key><![CDATA[%s]]></follow_key>
-                        <ipaddress><![CDATA[%s]]></ipaddress>
-                        <source_host><![CDATA[%s]]></source_host>
-                        <state><![CDATA[%s]]></state>
-                        </params>
-                        </methodCall>',
-                        $val->follow_key,
-                        $banip_info->ipaddress,
-                        $banip_info->source_host,
-                        301);
-
+					$body->act = 'procAntiaccessSync';
+					$body->follow_key = $val->follow_key;
+					$body->ipaddress = $banip_info->ipaddress;
+					$body->source_host = $banip_info->source_host;
+					$body->state = 301;
                     if($val->rank == 'S') $buff = $oAntiaccessModel->sendRequest($val->host, $body, true);
                     else $buff = $oAntiaccessModel->sendRequest($val->host, $body, false);
                 }
@@ -2060,6 +1818,7 @@
          * @brief Anti-accessXE White IP delete push
          **/
         function deleteAntiaccessWhiteipPush(&$obj) {
+            if($obj->mode) return;
             $oAntiaccessModel = &getModel('antiaccess');
 
             // 직접 삭제하는 경우
@@ -2070,6 +1829,8 @@
                     if(!$whiteip_info) continue;
                     // 해당 IP를 최초 생성하지 않았다면 다음을 진행
                     if($whiteip_info->follow_host) continue;
+					// 공개한 IP가 아니면 다음을 진행
+					if($whiteip_info->public != 'Y') continue;
 
                     // 삭제된 IP를 보낼 Follow 대상자 중 IP를 보내준 Follow Host를 제외 함
                     if($obj->follow_key) $args->not_follow_key = $obj->follow_key;
@@ -2083,22 +1844,11 @@
                         if(Context::get('is_ip_type') == '' || Context::get('is_ip_type') == 'ban') continue;
 
                         // White ip 삭제 정보를 보냄
-                        $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                            <methodCall>
-                            <params>
-                            <module><![CDATA[antiaccess]]></module>
-                            <act><![CDATA[procAntiaccessSync]]></act>
-                            <follow_key><![CDATA[%s]]></follow_key>
-                            <ipaddress><![CDATA[%s]]></ipaddress>
-                            <source_host><![CDATA[%s]]></source_host>
-                            <state><![CDATA[%s]]></state>
-                            </params>
-                            </methodCall>',
-                            $val->follow_key,
-                            $whiteip_info->ipaddress,
-                            $whiteip_info->source_host,
-                            311);
-
+						$body->act = 'procAntiaccessSync';
+						$body->follow_key = $val->follow_key;
+						$body->ipaddress = $whiteip_info->ipaddress;
+						$body->source_host = $whiteip_info->source_host;
+						$body->state = 311;
                         if($val->rank == 'S') $buff = $oAntiaccessModel->sendRequest($val->host, $body, true);
                         else $buff = $oAntiaccessModel->sendRequest($val->host, $body, false);
                     }
@@ -2119,22 +1869,11 @@
                     if(Context::get('is_ip_type') == '' || Context::get('is_ip_type') == 'ban') continue;
 
                     // White ip 삭제 정보를 보냄
-                    $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                        <methodCall>
-                        <params>
-                        <module><![CDATA[antiaccess]]></module>
-                        <act><![CDATA[procAntiaccessSync]]></act>
-                        <follow_key><![CDATA[%s]]></follow_key>
-                        <ipaddress><![CDATA[%s]]></ipaddress>
-                         <source_host><![CDATA[%s]]></source_host>
-                        <state><![CDATA[%s]]></state>
-                        </params>
-                        </methodCall>',
-                        $val->follow_key,
-                        $whiteip_info->ipaddress,
-                        $whiteip_info->source_host,
-                        311);
-
+					$body->act = 'procAntiaccessSync';
+					$body->follow_key = $val->follow_key;
+					$body->ipaddress = $whiteip_info->ipaddress;
+					$body->source_host = $whiteip_info->source_host;
+					$body->state = 311;
                     if($val->rank == 'S') $buff = $oAntiaccessModel->sendRequest($val->host, $body, true);
                     else $buff = $oAntiaccessModel->sendRequest($val->host, $body, false);
                 }
@@ -2147,14 +1886,8 @@
         function procAntiaccessRankCheck() {
             $oAntiaccessModel = &getModel('antiaccess');
 
-            $body = '<?xml version="1.0" encoding="utf-8" ?>
-                <methodCall>
-                <params>
-                <module><![CDATA[antiaccess]]></module>
-                <act><![CDATA[procAntiaccessRankCheckApi]]></act>
-                </params>
-                </methodCall>';
-
+			// XML
+			$body->act = 'procAntiaccessRankCheckApi';
             $buff = $oAntiaccessModel->sendRequest(Context::getRequestUri(), $body, false);
 
             $this->setMessage("antiaccess_rank_success");
@@ -2214,8 +1947,8 @@
 
                 // 추가할 정보를 만듬
 				$obj->ipaddress = $val->ipaddress;
+				$obj->country_code = $val->country_code;
 				$obj->source_host = $val->source_host;
-                $obj->source_host = $val->source_host;
                 $follow_host = $oAntiaccessModel->parseUri($followhost_info->host, 'www');
                 $obj->follow_host = $follow_host['host'];
                 $obj->apply = $apply;
@@ -2227,6 +1960,15 @@
                 $this->insertAntiaccessBanip($obj);
                 unset($obj);
             }
+        
+			$follow_obj->follow_srl = $followhost_info->follow_srl;
+			$follow_obj->mode = 'sync';
+			$follow_obj->extra_vars->type = 'ban';
+			$follow_obj->extra_vars->total_page = $args->total_page;
+			$follow_obj->extra_vars->page = $args->page;
+			$follow_obj->extra_vars->state = 'my';
+			$follow_obj->extra_vars = serialize($follow_obj->extra_vars);
+			$this->updateAntiaccessFollowhost($follow_obj);
         }
 
         /**
@@ -2270,6 +2012,7 @@
 
                 // 추가할 정보를 만듬
 				$obj->ipaddress = $val->ipaddress;
+				$obj->country_code = $val->country_code;
 				$obj->source_host = $val->source_host;
                 $follow_host = $oAntiaccessModel->parseUri($followhost_info->host, 'www');
                 $obj->follow_host = $follow_host['host'];
@@ -2282,7 +2025,41 @@
                 $this->insertAntiaccessWhiteip($obj);
                 unset($obj);
             }
+
+			$follow_obj->follow_srl = $followhost_info->follow_srl;
+			$follow_obj->mode = 'sync';
+			$follow_obj->extra_vars->type = 'white';
+			$follow_obj->extra_vars->total_page = $args->total_page;
+			$follow_obj->extra_vars->page = $args->page;
+			$follow_obj->extra_vars->state = 'my';
+			$follow_obj->extra_vars = serialize($follow_obj->extra_vars);
+			$this->updateAntiaccessFollowhost($follow_obj);
+        }
+
+        /**
+         * @brief 국가 Code 값 추가하기
+         **/
+		function procGeoip($obj = array())
+		{
+			if(!is_array($obj))
+			{
+				return;
+			}
+
+			require_once(_XE_PATH_.'modules/antiaccess/libs/geoip/geoip.inc');
+			$gi = geoip_open(_XE_PATH_.'modules/antiaccess/libs/geoip/GeoIP.dat', GEOIP_STANDARD);
+			foreach($obj as $key => $val)
+			{
+				$output[$key] = $val;
+				if(!$val->country_code)
+				{
+					$output[$key]->country_code = geoip_country_code_by_addr($gi, $val->ipaddress);
+					$this->updateAntiaccessWhiteip($output[$key]);
+				}
+			}
+			geoip_close($gi);
+
+			return $output;
         }
     }
-
 ?>

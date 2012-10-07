@@ -7,7 +7,9 @@
         <column name="source_host" var="source_host" notnull="notnull" />
         <column name="follow_host" var="follow_host" />
         <column name="ipaddress" var="ipaddress" notnull="notnull" />
+        <column name="country_code" var="country_code" notnull="notnull" />
         <column name="apply" var="apply" default="N" />
+        <column name="public" var="public" default="N" />
         <column name="regdate" var="regdate" default="curdate()" />
     </columns>
 </query>

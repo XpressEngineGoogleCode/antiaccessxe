@@ -131,6 +131,39 @@
         }
 
         /**
+         * @brief 국가 접근 설정
+         **/
+        function procAntiaccessAdminInsertCountry() {
+            $oModuleController = &getController('module');
+            $anti_config = Context::get('anti_config');
+
+        	$args = Context::gets('country_code', 'country_conn');
+        	if($args->country_code)
+        	{
+				$country_code = explode(',', $args->country_code);
+				foreach($country_code as $val)
+				{
+					if(!$val) continue;
+					$anti_config->country->code[$val] = TRUE;
+				}
+			}
+
+			if($args->country_conn)
+			{
+				$anti_config->country->conn = $args->country_conn;
+			}
+
+            $oModuleController->insertModuleConfig('antiaccess', $anti_config);
+
+            $this->setMessage('success_registed');
+			if (Context::get('success_return_url')){
+				$this->setRedirectUrl(Context::get('success_return_url'));
+			}else{
+				$this->setRedirectUrl(getNotEncodedUrl('', 'module', 'admin', 'act', 'dispAntiaccessAdminConfig'));
+			}
+        }
+
+        /**
          * @brief Anti-access 차단, 금지, 비금지 사용 여부 설정
          **/
         function procAntiaccessAdminInsertUse() {
@@ -142,6 +175,7 @@
             if($args->use_block) $anti_config->use->use_block = $args->use_block;
             if($args->use_banned) $anti_config->use->use_banned = $args->use_banned;
             if($args->use_white) $anti_config->use->use_white = $args->use_white;
+            if($args->use_country) $anti_config->use->use_country = $args->use_country;
 
             $oModuleController->insertModuleConfig('antiaccess', $anti_config);
 
@@ -160,14 +194,12 @@
             $oAntiaccessController = &getController('antiaccess');
             $anti_config = Context::get('anti_config');
 
-            $args = Context::gets('ipaddress');
-
             // 등록하려는 IP가 비공인 IP라면 추가하지 않음
-            $args = Context::gets('ipaddress');
-            if(!$oAntiaccessModel->checkIpaddress($args->ipaddress)) return new Object(-1, "msg_invalid_ipaddress");
+            $args = Context::gets('ipaddress', 'public');
+//            if(!$oAntiaccessModel->checkIpaddress($args->ipaddress)) return new Object(-1, "msg_invalid_ipaddress");
             // 등록을 시도하는 HOST가 비공인 IP라면 추가하지 않음
             $request_uri = $oAntiaccessModel->parseUri(Context::get('request_uri'), 'www');
-            if(!$oAntiaccessModel->checkIpaddress($request_uri['host'], true)) return new Object(-1, "msg_invalid_host");
+//            if(!$oAntiaccessModel->checkIpaddress($request_uri['host'], true)) return new Object(-1, "msg_invalid_host");
 
             $is_banip = $oAntiaccessModel->getAntiaccessBanipCount($args);
             if($is_banip) return new Object(-1, "msg_ipaddress_exists");
@@ -179,6 +211,10 @@
             $uri = $oAntiaccessModel->parseUri(Context::get('request_uri'), 'www');
             $args->source_host = $uri['host'];
             $args->apply = 'Y';
+            if($args->public != 'Y')
+            {
+            	$args->mode = 'sync';
+            }
 
             $oAntiaccessController->insertAntiaccessBanip($args);
             $this->setMessage("success_registed");
@@ -231,6 +267,33 @@
         }
 
         /**
+         * @brief 금지 ip 공개 상태 변경
+         **/
+        function procAntiaccessAdminUpdateBanipPublic() {
+            $oAntiaccessModel = &getModel('antiaccess');
+            $oAntiaccessController = &getController('antiaccess');
+
+            $args = Context::gets('ban_srl', 'public');
+            if(!$args->ban_srl || !$args->public) return new Object(-1, "msg_invalid_request");
+
+            if($args->public == 'Y')
+            {
+	            $oBanip = $oAntiaccessModel->getAntiaccessBanipInfo($args);
+				$obj->ipaddress = $oBanip->ipaddress;
+	            $obj->source_host = $oBanip->source_host;
+            	$oAntiaccessController->insertAntiaccessBanipPush($obj);
+            }
+            elseif($args->public == 'N')
+            {
+            	$obj->cart[] = $args->ban_srl;
+            	$oAntiaccessController->deleteAntiaccessBanipPush($obj);
+            }
+
+            $oAntiaccessController->updateAntiaccessBanip($args);
+            $this->setMessage("success_updated");
+        }
+
+        /**
          * @brief 비금지 ip 추가
          **/
         function procAntiaccessAdminInsertWhiteip() {
@@ -239,11 +302,11 @@
             $anti_config = Context::get('anti_config');
 
             // 등록하려는 IP가 비공인 IP라면 추가하지 않음
-            $args = Context::gets('ipaddress');
-            if(!$oAntiaccessModel->checkIpaddress($args->ipaddress)) return new Object(-1, "msg_invalid_ipaddress");
+            $args = Context::gets('ipaddress', 'public');
+            //if(!$oAntiaccessModel->checkIpaddress($args->ipaddress)) return new Object(-1, "msg_invalid_ipaddress");
             // 등록을 시도하는 HOST가 비공인 IP라면 추가하지 않음
             $request_uri = $oAntiaccessModel->parseUri(Context::get('request_uri'), 'www');
-            if(!$oAntiaccessModel->checkIpaddress($request_uri['host'], true)) return new Object(-1, "msg_invalid_host");
+            //if(!$oAntiaccessModel->checkIpaddress($request_uri['host'], true)) return new Object(-1, "msg_invalid_host");
 
             $is_whiteip = $oAntiaccessModel->getAntiaccessWhiteipCount($args);
             if($is_whiteip) return new Object(-1, "msg_ipaddress_exists");
@@ -255,6 +318,10 @@
             $uri = $oAntiaccessModel->parseUri(Context::get('request_uri'), 'www');
             $args->source_host = $uri['host'];
             $args->apply = 'Y';
+            if($args->public != 'Y')
+            {
+            	$args->mode = 'sync';
+            }
 
             $oAntiaccessController->insertAntiaccessWhiteip($args);
             $this->setMessage("success_registed");
@@ -304,6 +371,33 @@
 
             $oAntiaccessController->deleteAntiaccessWhiteip($args);
             $this->setMessage("success_deleted");
+        }
+
+        /**
+         * @brief 비금지 ip 공개 상태 변경
+         **/
+        function procAntiaccessAdminUpdateWhiteipPublic() {
+            $oAntiaccessModel = &getModel('antiaccess');
+            $oAntiaccessController = &getController('antiaccess');
+
+            $args = Context::gets('white_srl', 'public');
+            if(!$args->white_srl || !$args->public) return new Object(-1, "msg_invalid_request");
+
+            if($args->public == 'Y')
+            {
+	            $oWhiteip = $oAntiaccessModel->getAntiaccessWhiteipInfo($args);
+				$obj->ipaddress = $oWhiteip->ipaddress;
+	            $obj->source_host = $oWhiteip->source_host;
+            	$oAntiaccessController->insertAntiaccessWhiteipPush($obj);
+            }
+            elseif($args->public == 'N')
+            {
+            	$obj->cart[] = $args->white_srl;
+            	$oAntiaccessController->deleteAntiaccessWhiteipPush($obj);
+            }
+
+            $oAntiaccessController->updateAntiaccessWhiteip($args);
+            $this->setMessage("success_updated");
         }
 
         /**
@@ -424,7 +518,7 @@
             $uri = $oAntiaccessModel->parseUri($args->host, 'www');
             $request_uri = $oAntiaccessModel->parseUri(Context::get('request_uri'), 'www');
             if($uri['host'] == $request_uri['host']) return new Object(-1, "msg_request_uri_exists");
-            if(!$oAntiaccessModel->checkIpaddress($uri['host'], true) || !$oAntiaccessModel->checkIpaddress($request_uri['host'], true)) return new Object(-1, "msg_invalid_host");
+            //if(!$oAntiaccessModel->checkIpaddress($uri['host'], true) || !$oAntiaccessModel->checkIpaddress($request_uri['host'], true)) return new Object(-1, "msg_invalid_host");
             $args->host = $uri['host'];
             $is_banhost = $oAntiaccessModel->getAntiaccessBanhostCount($args);
             if($is_banhost) return new Object(-1, "msg_host_exists");

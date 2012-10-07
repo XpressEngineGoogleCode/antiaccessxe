@@ -9,6 +9,7 @@
         <column name="follow_level" var="follow_level" filter="number" />
         <column name="last_update" var="last_update" default="curdate()" />
         <column name="rank" var="rank" />
+        <column name="extra_vars" var="extra_vars" />
     </columns>
     <conditions>
         <condition operation="equal" column="follow_srl" var="follow_srl" filter="number" pipe="where" />
