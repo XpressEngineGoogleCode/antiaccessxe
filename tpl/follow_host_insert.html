@@ -17,7 +17,7 @@
         <tr>
             <th scope="col"><div>{$lang->antiaccess_followhost_state}</div></th>
             <td class="wide">
-                {$lang->antiaccess_followhost_state_code[$followhost_info->state]} <a href="#$antiaccess.synchronization" id="sync_{$no}" class="button small" title="{$followhost_info->follow_srl}" cond="$followhost_info->state==104"><span class="sync">{$lang->antiaccess_sync}</span></a>
+                {$lang->antiaccess_followhost_state_code[$followhost_info->state]} <a href="#$antiaccess.synchronization" id="sync_{$no}" class="button small" title="{$followhost_info->follow_srl}" cond="in_array($followhost_info->state, array(104,504))"><span class="sync">{$lang->antiaccess_sync}</span></a>
                 <p>{$lang->antiaccess_followhost_state_description}</p>
             </td>
         </tr>

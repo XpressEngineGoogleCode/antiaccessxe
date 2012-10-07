@@ -77,8 +77,17 @@
             $obj->order_type = 'asc';
             $obj->list_count = 50; // 한번 요청시 몇건씩 보내줄지를 결정
             $obj->page = $args->page;
-            if($args->not_follow_host == 'Y') $obj->not_follow_host = array('');
-            if($args->is_follow_host == 'Y') $obj->is_follow_host = array('');
+            if($args->not_follow_host == 'Y') {
+	            $obj->follow_key = $args->follow_key;
+	            $followhost_info = $oAntiaccessModel->getAntiaccessFollowhostInfo($obj);
+	            $obj->not_follow_host = array($followhost_info->host);
+            }
+            
+            if($args->is_follow_host == 'Y') {
+	            $obj->follow_key = $args->follow_key;
+	            $followhost_info = $oAntiaccessModel->getAntiaccessFollowhostInfo($obj);
+            	$obj->is_follow_host = array($followhost_info->host);
+            }
 
             $output = executeQueryArray('antiaccess.getAntiaccessBanipList', $obj);
             if(!$output->toBool()) return $this->add('error','401');
@@ -148,8 +157,17 @@
             $obj->order_type = 'asc';
             $obj->list_count = 50; // 한번 요청시 몇건씩 보내줄지를 결정
             $obj->page = $args->page;
-            if($args->not_follow_host == 'Y') $obj->not_follow_host = array('');
-            if($args->is_follow_host == 'Y') $obj->is_follow_host = array('');
+            if($args->not_follow_host == 'Y') {
+	            $obj->follow_key = $args->follow_key;
+	            $followhost_info = $oAntiaccessModel->getAntiaccessFollowhostInfo($obj);
+	            $obj->not_follow_host = array($followhost_info->host);
+            }
+            
+            if($args->is_follow_host == 'Y') {
+	            $obj->follow_key = $args->follow_key;
+	            $followhost_info = $oAntiaccessModel->getAntiaccessFollowhostInfo($obj);
+            	$obj->is_follow_host = array($followhost_info->host);
+            }
 
             $output = executeQueryArray('antiaccess.getAntiaccessWhiteipList', $obj);
             if(!$output->toBool()) return $this->add('error','401');
@@ -551,13 +569,63 @@
         }
 
         /**
+         * @brief Follow Sync Check
+         **/
+        function getAntiaccessFollowCheck($obj, $mode = null) {
+            if($obj->mode) return;
+            $oModuleModel = &getModel('module');
+            $anti_config = $oModuleModel->getModuleConfig('antiaccess');
+            
+            $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
+                <methodCall>
+                <params>
+                <module><![CDATA[antiaccess]]></module>
+                <act><![CDATA[procAntiaccessSync]]></act>
+                <host><![CDATA[%s]]></host>
+                <state><![CDATA[%s]]></state>
+                <rank><![CDATA[%s]]></rank>
+                </params>
+                </methodCall>',
+                Context::get('request_uri'),
+                101,
+                $anti_config->rank
+                );
+
+            $buff = $this->sendRequest($obj->host, $body, true);
+
+            if(!$buff || $buff->response->state->body != 102) {
+                if($mode) return false;
+                else return new Object(-1, "msg_not_response");
+            }
+
+            if(!in_array($obj->state, array(100,104,504)) && $buff->response->rank_error->body == 401) {
+                if($mode) return false;
+                else return new Object(-1, "msg_not_rank");
+            }
+
+            if(!in_array($obj->state, array(100,104,504)) && $buff->response->state_error->body == 403) {
+                if($mode) return false;
+                else return new Object(-1, "msg_follow_exists");
+            }
+
+            $obj->rank = $buff->response->rank->body;
+
+            return true;
+        }
+
+        /**
          * @brief Follow Synchronization Request
          **/
         function getAntiaccessFollowSync(&$obj) {
             if($obj->mode) return;
+            $oModuleModel = &getModel('module');
             $oAntiaccessController = &getController('antiaccess');
+            $anti_config = $oModuleModel->getModuleConfig('antiaccess');
 
-            if(!$this->getAntiaccessFollowCheck($obj, true)) return new Object(-1, "msg_not_response");
+//            if(!$this->getAntiaccessFollowCheck($obj, true)) return new Object(-1, "msg_not_response");
+
+			if($anti_config->rank != $obj->rank) $state = 503;
+			else $state = 103;
 
             $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
                 <methodCall>
@@ -567,50 +635,22 @@
                 <host><![CDATA[%s]]></host>
                 <state><![CDATA[%s]]></state>
                 <my_level><![CDATA[%s]]></my_level>
+                <rank><![CDATA[%s]]></rank>
                 </params>
                 </methodCall>',
                 Context::get('request_uri'),
-                103,
-                $obj->my_level);
+                $state,
+                $obj->my_level,
+                $anti_config->rank
+                );
 
-            $buff = $this->sendRequest($obj->host, $body, false);
+            if($anti_config->rank != $obj->rank) $buff = $this->sendRequest($obj->host, $body, true);
+            else $buff = $this->sendRequest($obj->host, $body, false);
 
             $args = $obj;
-            $args->state = 103;
+            $args->state = $state;
             $obj->mode = 'sync';
             $oAntiaccessController->updateAntiaccessFollowhost($args);
-        }
-
-        /**
-         * @brief Follow Sync Check
-         **/
-        function getAntiaccessFollowCheck(&$obj, $mode = null) {
-            if($obj->mode) return;
-
-            $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                <methodCall>
-                <params>
-                <module><![CDATA[antiaccess]]></module>
-                <act><![CDATA[procAntiaccessSync]]></act>
-                <host><![CDATA[%s]]></host>
-                <state><![CDATA[%s]]></state>
-                </params>
-                </methodCall>',
-                Context::get('request_uri'),
-                101);
-
-            $buff = $this->sendRequest($obj->host, $body, true);
-            if(!$buff || $buff->response->state->body != 102) {
-                if($mode) return false;
-                else return new Object(-1, "msg_not_response");
-            }
-
-            if(!in_array($obj->state, array(100,104)) && $buff->response->state_error->body == 403) {
-                if($mode) return false;
-                else return new Object(-1, "msg_follow_exists");
-            }
-
-            return true;
         }
 
         /**

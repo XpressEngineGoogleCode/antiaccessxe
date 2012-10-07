@@ -3,7 +3,7 @@
         <table name="antiaccess_access_ip" />
     </tables>
     <columns>
-        <column name="access_srl" var="access_srl" filter="number" notnull="notnull" />
+        <column name="access_srl" var="access_srl" filter="number" />
         <column name="ipaddress" var="ipaddress" notnull="notnull" />
         <column name="limit_count" var="limit_count" filter="number" maxlength="11" />
         <column name="limit_display" var="limit_display" filter="number" maxlength="11" />
