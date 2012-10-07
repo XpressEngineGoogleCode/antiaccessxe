@@ -6,12 +6,13 @@
      **/
 
     $lang->antiaccess = "anti-accessXE";
-    $lang->antiaccess_description = "다중접근IP, 스팸IP를 자동적으로 차단해주는 학습형 IP차단 모듈 입니다.\n자세한 설명은 <a href=\"http://antiaccess.xpressengine.net/wiki\" title=\"anti-accessXE 프로젝트 위키\" target=\"_blank\">프로젝트 위키</a>를 참조해주세요.	";
+    $lang->antiaccess_description = "다중접근IP, 스팸IP를 자동적으로 차단해주는 학습형 IP차단 모듈 입니다.\n자세한 설명은 <a href=\"http://www.animeclub.net/wiki/Anti-accessXE\" title=\"anti-accessXE 프로젝트 위키\" target=\"_blank\">프로젝트 위키</a>를 참조해주세요.	";
 
     $lang->antiaccess_caption = "목록 정보";
     $lang->antiaccess_sync = "동기화 하기";
     $lang->antiaccess_apply = "적용";
     $lang->antiaccess_not_apply = "비적용";
+    $lang->antiaccess_public = "공개";
 
     /* header */
     $lang->antiaccess_config = "기본 설정";
@@ -31,6 +32,17 @@
     $lang->antiaccess_use_banned_description = "체크할 경우 기능이 수행 됩니다.";
     $lang->antiaccess_use_white = "비금지 기능 사용";
     $lang->antiaccess_use_white_description = "체크할 경우 기능이 수행 됩니다.";
+    $lang->antiaccess_use_country = "국가금지 기능 사용";
+    $lang->antiaccess_use_country_description = "체크할 경우 기능이 수행 됩니다.";
+
+	$lang->antiaccess_country = "국가 접근 기능";
+	$lang->antiaccess_country_select = "국가 선택";
+	$lang->antiaccess_country_select_total = "전체 국가";
+	$lang->antiaccess_country_selected = "선택한 국가";
+	$lang->antiaccess_country_conn = "접근 여부";
+	$lang->antiaccess_country_conn_block = "선택한 국가의 접근을 차단";
+	$lang->antiaccess_country_conn_white = "선택한 국가만 접근 허용";
+	$lang->antiaccess_country_conn_description = "선택한 국가의 접근 여부를 선택해주세요.";
 
     $lang->antiaccess_header = "차단시 표시할 정보";
     $lang->antiaccess_header_summary = "차단시 표시할 정보를 설정하는 내용 입니다.";
@@ -38,6 +50,8 @@
     $lang->antiaccess_code_description = "403 : Forbidden , 404 : Not Found";
     $lang->antiaccess_msg = "메시지";
     $lang->antiaccess_msg_description = "출력할 메시지를 적어주세요.(HTML 가능)";
+    $lang->antiaccess_forward_url = "URL 이동";
+    $lang->antiaccess_forward_url_description = "이동할 URL을 적어주세요.";
 
     $lang->antiaccess_block = "다중접속 차단";
     $lang->antiaccess_block_summary = "다중 접속을 차단시키는 정보의 등록 내용 입니다.";
@@ -83,10 +97,8 @@
     $lang->antiaccess_cache_type_description = "캐시 기능을 이용하면 차단 대상자를 확인하고 차단하는 과정에서 XE의 DB를 로드하고 않고 차단할 수 있습니다.\nXE의 DB를 로드하지 않음으로써 불필요한 자원소모를 막을 수 있습니다.";
     $lang->antiaccess_cache_index = "캐시기능 적용";
     $lang->antiaccess_cache_index_description = "이 옵션을 적용하면 XE를 로드하지 않고 차단 수행을 할 수 있습니다.\n캐시 기능을 제대로 사용하려면 XE의 index.php에서 XE를 호출하기 전에 먼저 호출 되어야 합니다.\n Core 수정을 안전하고 편리하게 하기 위해 anti-accessXE에서는 index.php 파일을 모듈내에 백업하고 캐시 호출 기능이 적용된 index.php로 대체합니다.\n비적용시에는 다시 백업했던 파일을 복원합니다.";
-    $lang->antiaccess_cache_backup = "백업여부확인";
+    $lang->antiaccess_cache_backup = "상태확인";
     $lang->antiaccess_cache_backup_description = "캐시 기능이 적용된 index.php를 사용하고 있는지, 백업상태가 정상인지를 확인합니다.";
-    $lang->antiaccess_cache_index_ver = "캐시용 index.php 버전";
-    $lang->antiaccess_cache_index_ver_description = "캐시용 index.php에 사용된 버전을 명시합니다.(※ 현재 버전과 버전이 다르다면 <a href=\"http://antiaccess.xpressengine.net/wiki\" title=\"anti-accessXE 프로젝트 위키\" target=\"_blank\">프로젝트 위키</a>에서 확인해주시기 바랍니다.)";
     $lang->antiaccess_ftp_pass = "FTP 패스워드 입력";
     $lang->antiaccess_ftp_pass_description = "캐시 설정을 위해서는 index.php의 권한을 변경할 필요가 있습니다.\n관리자페이지 Setting에서 설정한 FTP의 패스워드를 입력해주세요.\n올바르게 변경 처리 된 후에는 다시 권한을 원래대로 되돌립니다.(0644)\n(※ 해당 값은 저장하지 않습니다.)";
 
@@ -99,6 +111,7 @@
     $lang->antiaccess_source_host = "발생된 HOST";
     $lang->antiaccess_ipaddress = "IP 주소";
     $lang->antiaccess_apply_mode = "적용여부";
+    $lang->antiaccess_public_mode = "공개여부";
     $lang->antiaccess_regdate = "등록일시";
 
     $lang->antiaccess_banip_list = "금지 IP 목록";
@@ -139,6 +152,7 @@
     $lang->antiaccess_banip_config_summary = "금지 IP를 설정하는 내용 입니다.";
     $lang->antiaccess_banip = "금지 IP";
     $lang->antiaccess_banip_description = "금지하려는 IP를 적어주세요.";
+    $lang->antiaccess_public_description = "공개 선택을 체크하시면 다른 Follow host에게 정보를 제공합니다.";
 
     /* White IP Config */
     $lang->antiaccess_whiteip_config = "비금지 IP 설정";
@@ -205,6 +219,13 @@
         "120" => "정보 삭제",
         "121" => "정보 삭제 완료",
         "122" => "Follow 삭제",
+        "503" => "Follow 요청(S)",
+        "504" => "Follow 요청받음(S)",
+        "505" => "Key 생성(S)",
+        "507" => "Key 전달(S)",
+        "508" => "동기화 시작(S)",
+        "509" => "동기화 중(S)",
+        "510" => "동기화 중(S)",
         "201" => "Ban ip 전달",
         "202" => "Ban ip 전달 완료",
         "211" => "White ip 전달",
@@ -217,6 +238,12 @@
         "404" => "응답없음",
     );
 
+	/* Rank */
+	$lang->antiaccess_rank = "anti-accessXE 동작상태";
+	$lang->antiaccess_rank_distributor = "현재 동작상태는 배포자(Distributor) 입니다.";
+	$lang->antiaccess_rank_subscriber = "현재 동작상태는 구독자(Subscriber) 입니다.";
+	$lang->antiaccess_rank_success = "동작상태 확인을 시도했습니다. 5초 후 확인해주세요.";
+
     /* complete message */
     $lang->success_synchronization = "동기화 진행을 시작합니다.";
 
@@ -224,6 +251,7 @@
     $lang->msg_ipaddress_exists = "이미 존재하는 IP 주소 입니다.";
     $lang->msg_host_exists = "이미 존재하는 HOST 주소 입니다.";
     $lang->msg_follow_exists = "상대방과 이미 동기화하고 있는 Follow Host 주소 입니다.";
+    $lang->msg_not_rank = "동작상태가 서로 구독자(Subscriber) 일경우 Follow가 불가합니다.";
     $lang->msg_request_uri_exists = "본인의 HOST는 사용하실 수 없습니다.";
     $lang->msg_invalid_ipaddress = "잘못된 IP 주소 형식 입니다.";
     $lang->msg_invalid_host = "잘못된 HOST 형식 입니다.\n입력값이 잘못되었거나 현재 접속하고있는 HOST 주소 형식이 잘못 되었습니다.\n잘못된 예) 127.0.0.1";

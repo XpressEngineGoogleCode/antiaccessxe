@@ -1,6 +1,7 @@
 <table name="antiaccess_access_ip">
     <column name="access_srl" type="number" size="11" notnull="notnull" primary_key="primary_key" auto_increment="auto_increment" />
     <column name="ipaddress" type="char" size="15" notnull="notnull" index="idx_ipaddress" />
+    <column name="country_code" type="char" size="2" notnull="notnull" />
     <column name="limit_count" type="number" size="11" default="0" notnull="notnull" />
     <column name="limit_display" type="number" size="11" default="0" notnull="notnull" />
     <column name="limit_rss" type="number" size="11" default="0" notnull="notnull" />

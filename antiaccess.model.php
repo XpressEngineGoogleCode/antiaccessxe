@@ -77,11 +77,29 @@
             $obj->order_type = 'asc';
             $obj->list_count = 50; // 한번 요청시 몇건씩 보내줄지를 결정
             $obj->page = $args->page;
-            if($args->not_follow_host == 'Y') $obj->not_follow_host = array('');
-            if($args->is_follow_host == 'Y') $obj->is_follow_host = array('');
+            $obj->follow_key = $args->follow_key;
+			$followhost_info = $this->getAntiaccessFollowhostInfo($obj);
+
+            if($args->not_follow_host == 'Y') {
+	            $obj->not_follow_host = array($followhost_info->host);
+            }
+            
+            if($args->is_follow_host == 'Y') {
+            	$obj->is_follow_host = array($followhost_info->host);
+            }
 
             $output = executeQueryArray('antiaccess.getAntiaccessBanipList', $obj);
             if(!$output->toBool()) return $this->add('error','401');
+
+			$follow_obj->follow_srl = $followhost_info->follow_srl;
+			$follow_obj->mode = 'sync';
+			$follow_obj->extra_vars->type = 'ban';
+			$follow_obj->extra_vars->total_page = $output->total_page;
+			$follow_obj->extra_vars->page = $args->page;
+			$follow_obj->extra_vars->state = 'follower';
+			$follow_obj->extra_vars = serialize($follow_obj->extra_vars);
+            $oAntiaccessController = &getController('antiaccess');
+			$oAntiaccessController->updateAntiaccessFollowhost($follow_obj);
 
             $this->add('total_page',$output->total_page);
             $this->add('items',$output->data);
@@ -148,11 +166,29 @@
             $obj->order_type = 'asc';
             $obj->list_count = 50; // 한번 요청시 몇건씩 보내줄지를 결정
             $obj->page = $args->page;
-            if($args->not_follow_host == 'Y') $obj->not_follow_host = array('');
-            if($args->is_follow_host == 'Y') $obj->is_follow_host = array('');
+            $obj->follow_key = $args->follow_key;
+			$followhost_info = $this->getAntiaccessFollowhostInfo($obj);
+
+            if($args->not_follow_host == 'Y') {
+	            $obj->not_follow_host = array($followhost_info->host);
+            }
+            
+            if($args->is_follow_host == 'Y') {
+            	$obj->is_follow_host = array($followhost_info->host);
+            }
 
             $output = executeQueryArray('antiaccess.getAntiaccessWhiteipList', $obj);
             if(!$output->toBool()) return $this->add('error','401');
+
+			$follow_obj->follow_srl = $followhost_info->follow_srl;
+			$follow_obj->mode = 'sync';
+			$follow_obj->extra_vars->type = 'white';
+			$follow_obj->extra_vars->total_page = $output->total_page;
+			$follow_obj->extra_vars->page = $args->page;
+			$follow_obj->extra_vars->state = 'follower';
+			$follow_obj->extra_vars = serialize($follow_obj->extra_vars);
+            $oAntiaccessController = &getController('antiaccess');
+			$oAntiaccessController->updateAntiaccessFollowhost($follow_obj);
 
             $this->add('total_page',$output->total_page);
             $this->add('items',$output->data);
@@ -394,6 +430,77 @@
         }
 
         /**
+         * @brief Country ip Check
+         **/
+        function getAntiaccessCountryipCheck() {
+            $anti_config = Context::get('anti_config');
+
+			// 접근한 IP가 국가코드와 일치한다면 ...
+            $args->ipaddress = Context::get('_REMOTE_ADDR_');
+            $args->ipaddress = "126.210.52.202";
+
+            // 캐시 사용일 경우 캐시 파일이 있는지 검사 후 일치하면 true를 리턴
+            if($anti_config->cache->cache_type <= 2) {
+                $buff = @FileHandler::readFile($this->cache_country_path.$args->ipaddress);
+                if($buff)
+                {
+					// 국가코드 비교 검사
+					if($anti_config->country->code[$buff])
+					{
+						$is_country = TRUE;
+					}
+
+					if($anti_config->country->conn == 'block')
+					{
+						if($is_country)
+						{
+							return TRUE;
+						}
+					}
+					elseif($anti_config->country->conn == 'white')
+					{
+						if(!$is_country)
+						{
+							return TRUE;
+						}
+					}
+
+					return false;
+                }
+            }
+
+			$country_code = $this->getGeoip($args->ipaddress);
+
+			if($anti_config->country->code[$country_code])
+			{
+				$is_country = TRUE;
+			}
+
+			if($anti_config->country->conn == 'block')
+			{
+				if($is_country)
+				{
+					$is_block = TRUE;
+				}
+			}
+			elseif($anti_config->country->conn == 'white')
+			{
+				if(!$is_country)
+				{
+					$is_block = TRUE;
+				}		
+			}
+
+			if($is_block)
+			{
+                if($anti_config->cache->cache_type <= 2) @FileHandler::writeFile($this->cache_country_path.$args->ipaddress, $country_code, 'w');
+                return true;
+			}
+
+            return false;
+        }
+
+        /**
          * @brief Ban ip Check
          **/
         function getAntiaccessBanipCheck() {
@@ -413,7 +520,7 @@
                 $oModuleModel = &getModel('module');
                 $anti_config = $oModuleModel->getModuleConfig('antiaccess');
 
-                if($anti_config->cache->cache_type <= 2) @FileHandler::writeFile($this->cache_ban_path.Context::get('_REMOTE_ADDR_'), "Y", 'w');
+                if($anti_config->cache->cache_type <= 2) @FileHandler::writeFile($this->cache_ban_path.Context::get('_REMOTE_ADDR_'), 'Y', 'w');
                 return true;
             }
 
@@ -480,8 +587,22 @@
         /**
          * @brief 동기식/비동기식 Api Request
          **/
-        function sendRequest($uri, $contents = null, $blocking = true) {
-            if(!$contents) return;
+        function sendRequest($uri, $body = array(), $blocking = true) {
+            if(!$body) return;
+
+			foreach($body as $key => $val)
+			{
+				$contents_body .= sprintf('<%s><![CDATA[%s]]></%s>', $key, $val, $key);
+			}
+
+            $contents = sprintf('<?xml version="1.0" encoding="utf-8" ?>
+                <methodCall>
+                <params>
+                <module><![CDATA[antiaccess]]></module>
+                %s
+                </params>
+                </methodCall>',
+                $contents_body);
 
             if($blocking) {
                 $buff = @FileHandler::getRemoteResource($uri, $contents, 3, 'POST', 'application/xml');
@@ -551,66 +672,66 @@
         }
 
         /**
-         * @brief Follow Synchronization Request
-         **/
-        function getAntiaccessFollowSync(&$obj) {
-            if($obj->mode) return;
-            $oAntiaccessController = &getController('antiaccess');
-
-            if(!$this->getAntiaccessFollowCheck($obj, true)) return new Object(-1, "msg_not_response");
-
-            $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                <methodCall>
-                <params>
-                <module><![CDATA[antiaccess]]></module>
-                <act><![CDATA[procAntiaccessSync]]></act>
-                <host><![CDATA[%s]]></host>
-                <state><![CDATA[%s]]></state>
-                <my_level><![CDATA[%s]]></my_level>
-                </params>
-                </methodCall>',
-                Context::get('request_uri'),
-                103,
-                $obj->my_level);
-
-            $buff = $this->sendRequest($obj->host, $body, false);
-
-            $args = $obj;
-            $args->state = 103;
-            $obj->mode = 'sync';
-            $oAntiaccessController->updateAntiaccessFollowhost($args);
-        }
-
-        /**
          * @brief Follow Sync Check
          **/
-        function getAntiaccessFollowCheck(&$obj, $mode = null) {
+        function getAntiaccessFollowCheck($obj, $mode = null) {
             if($obj->mode) return;
-
-            $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                <methodCall>
-                <params>
-                <module><![CDATA[antiaccess]]></module>
-                <act><![CDATA[procAntiaccessSync]]></act>
-                <host><![CDATA[%s]]></host>
-                <state><![CDATA[%s]]></state>
-                </params>
-                </methodCall>',
-                Context::get('request_uri'),
-                101);
-
+            $oModuleModel = &getModel('module');
+            $anti_config = $oModuleModel->getModuleConfig('antiaccess');
+            
+			$body->act = 'procAntiaccessSync';
+			$body->host = Context::get('request_uri');
+			$body->state = 101;
+			$body->rank = $anti_config->rank;
             $buff = $this->sendRequest($obj->host, $body, true);
+
             if(!$buff || $buff->response->state->body != 102) {
                 if($mode) return false;
                 else return new Object(-1, "msg_not_response");
             }
 
-            if(!in_array($obj->state, array(100,104)) && $buff->response->state_error->body == 403) {
+            if(!in_array($obj->state, array(100,104,504)) && $buff->response->rank_error->body == 401) {
+                if($mode) return false;
+                else return new Object(-1, "msg_not_rank");
+            }
+
+            if(!in_array($obj->state, array(100,104,504)) && $buff->response->state_error->body == 403) {
                 if($mode) return false;
                 else return new Object(-1, "msg_follow_exists");
             }
 
+            $obj->rank = $buff->response->rank->body;
+
             return true;
+        }
+
+        /**
+         * @brief Follow Synchronization Request
+         **/
+        function getAntiaccessFollowSync(&$obj) {
+            if($obj->mode) return;
+            $oModuleModel = &getModel('module');
+            $oAntiaccessController = &getController('antiaccess');
+            $anti_config = $oModuleModel->getModuleConfig('antiaccess');
+
+//            if(!$this->getAntiaccessFollowCheck($obj, true)) return new Object(-1, "msg_not_response");
+
+			if($anti_config->rank != $obj->rank) $state = 503;
+			else $state = 103;
+
+			// XML
+			$body->act = 'procAntiaccessSync';
+			$body->host = Context::get('request_uri');
+			$body->state = $state;
+			$body->my_level = $obj->my_level;
+			$body->rank = $anti_config->rank;
+            if($anti_config->rank != $obj->rank) $buff = $this->sendRequest($obj->host, $body, true);
+            else $buff = $this->sendRequest($obj->host, $body, false);
+
+            $args = $obj;
+            $args->state = $state;
+            $obj->mode = 'sync';
+            $oAntiaccessController->updateAntiaccessFollowhost($args);
         }
 
         /**
@@ -623,22 +744,12 @@
             $obj->follow_key = $args->follow_key;
             $followhost_info = $oAntiaccessModel->getAntiaccessFollowhostInfo($obj);
 
-            $body = sprintf('<?xml version="1.0" encoding="utf-8" ?>
-                <methodCall>
-                <params>
-                <module><![CDATA[antiaccess]]></module>
-                <act><![CDATA[procAntiaccessSync]]></act>
-                <follow_key><![CDATA[%s]]></follow_key>
-                <state><![CDATA[%s]]></state>
-                <mode><![CDATA[%s]]></mode>
-                <page><![CDATA[%s]]></page>
-                </params>
-                </methodCall>',
-                $followhost_info->follow_key,
-                $args->state,
-                $args->mode,
-                $args->page);
-
+			// XML
+			$body->act = 'procAntiaccessSync';
+			$body->follow_key = $followhost_info->follow_key;
+			$body->state = $args->state;
+			$body->mode = $args->mode;
+			$body->page = $args->page;
             $buff = $this->sendRequest($followhost_info->host, $body, false);
         }
 
@@ -660,5 +771,23 @@
             elseif(in_array($level, array(105,106,115,116,125,126))) Context::set('is_ip_type','white');
             else  Context::set('is_ip_type','');
         }
+
+        /**
+         * @brief 국가 Code 구하기
+         **/        
+        function getGeoip($ipaddress = NULL)
+        {
+			if(!$ipaddress)
+			{
+				return;
+			}
+
+			require_once(_XE_PATH_.'modules/antiaccess/libs/geoip/geoip.inc');
+			$gi = geoip_open(_XE_PATH_.'modules/antiaccess/libs/geoip/GeoIP.dat', GEOIP_STANDARD);
+			$country_code = geoip_country_code_by_addr($gi, $ipaddress);
+			geoip_close($gi);
+
+			return $country_code;
+		}
     }
 ?>

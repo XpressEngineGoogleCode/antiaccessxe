@@ -10,6 +10,7 @@
         <condition operation="equal" column="host" var="host" pipe="and" />
         <condition operation="like" column="host" var="like_host" pipe="and" />
         <condition operation="equal" column="follow_key" var="follow_key" pipe="and" />
+        <condition operation="equal" column="rank" var="rank" pipe="and" />
     </conditions>
     <navigation />
 </query>

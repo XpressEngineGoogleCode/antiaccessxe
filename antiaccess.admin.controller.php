@@ -53,104 +53,69 @@
             /* 캐시용 index.php로 복사하고 원본은 백업 (※ FTP 계정에 XE 기본설정에 설정되어있어야 함) */
             $oFileHandler = new FileHandler();
             $index_path = _XE_PATH_."index.php";
-            $index_bak_path = _XE_PATH_."modules/antiaccess/config/index.bak.php";
+            $index_bak_path = _XE_PATH_."files/antiaccess/index/index.bak.php";
             $index_antiaccess_path = _XE_PATH_."modules/antiaccess/tpl/index/index.php";
+            $file_buff = $oFileHandler->readFile($index_path);
 
             if($args->ftp_password) {
                 $this->ftp_password = $args->ftp_password;
 
-                // 처음 캐시 설정을 사용할 경우 config폴더에 저장되도록 권한을 변경함
-                if(!is_file("modules/antiaccess/config/config")) {
-                    // FTP 로그인
-                    if($this->ftpConn()) {
-                        $this->ftpChmod(0777, "modules/antiaccess/config");
+                // 캐시 적용일 경우
+                if($args->cache_index == true) {
+                    preg_match_all("!\[@@([^\>]*)\@@]!is", $file_buff, $index_ver);
 
-                        // 캐시 적용일 경우
-                        if($args->cache_index == true) {
-                            $file_buff = $oFileHandler->readFile($index_path);
-                            preg_match_all("!\[([^\>]*)\]!is", $file_buff, $index_ver);
+                    // 이미 캐시 적용이 되었는지 확인 후 과거버전이거나 적용이 안되어 있다면 index.php을 백업 후 적용
+                    if(@$index_ver[1][0] != "Anti-accessXE") {
+                        // FTP 로그인
+                        if($this->ftpConn()) {
+                            // 복사가 붙여넣기가 가능하도록 퍼미션을 변경
+                            if($this->ftpChmod(0777, "index.php")) {
+                                // 백업 시킴
+                                $oFileHandler->copyFile($index_path, $index_bak_path, 'Y');
+                                // Anti-accessXE 캐시용 index.php파일을 적용시킴(복사 overwrite)
+                                $oFileHandler->copyFile($index_antiaccess_path, $index_path, 'Y');
 
-                            // 이미 캐시 적용이 되었는지 확인 후 과거버전이거나 적용이 안되어 있다면 index.php을 백업 후 적용
-                            if(@$index_ver[1][0] != "Core 1.4.4.2, Anti-accessXE") {
-                                // 복사가 붙여넣기가 가능하도록 퍼미션을 변경
-                                if($this->ftpChmod(0777, "index.php")) {
-                                    // 백업 시킴
-                                    $oFileHandler->copyFile($index_path, $index_bak_path, 'Y');
-                                    // Anti-accessXE 캐시용 index.php파일을 적용시킴(복사 overwrite)
-                                    $oFileHandler->copyFile($index_antiaccess_path, $index_path, 'Y');
+                                // 퍼미션을 원래대로 복구
+                                $this->ftpChmod(0644, "index.php");
 
-                                    // 퍼미션을 원래대로 복구
-                                    $this->ftpChmod(0644, "index.php");
-
-                                    // 캐시 설정을 위해 index.php이 복사가 완료 될 경우 기능 적용 설정을 함
-                                    $anti_config->cache->cache_index = $args->cache_index;
-                                }
+                                // 캐시 설정을 위해 index.php이 복사가 완료 될 경우 기능 적용 설정을 함
+                                $anti_config->cache->cache_index = $args->cache_index;
                             }
-                        }
 
-                        // FTP 종료
-                        $this->FtpDisConn();
+                            // FTP 종료
+                            $this->FtpDisConn();
+                        }
                     }
-                } else {  // 캐시 설정을 한번이라도 진행 한 경우
-                    // 캐시 적용일 경우
-                    if($args->cache_index == true) {
-                        $file_buff = $oFileHandler->readFile($index_path);
-                        preg_match_all("!\[([^\>]*)\]!is", $file_buff, $index_ver);
+                } else { // 캐시 비적용일 경우
+                    // 백업시켰던 파일이 존재할 경우
+                    if(is_file($index_bak_path)) {
+                        // FTP 로그인
+                        if($this->ftpConn()) {
+                            // 복사가 붙여넣기가 가능하도록 퍼미션을 변경
+                            if($this->ftpChmod(0777, "index.php")) {
+                                // 백업 시켰던 index.php파일을 복구시킴(복사 overwrite)
+                                $oFileHandler->copyFile($index_bak_path, $index_path, 'Y');
+                                // 백업파일을 삭제
+                                $oFileHandler->removeFile($index_bak_path);
 
-                        // 이미 캐시 적용이 되었는지 확인 후 과거버전이거나 적용이 안되어 있다면 index.php을 백업 후 적용
-                        if(@$index_ver[1][0] != "Core 1.4.4.2, Anti-accessXE") {
-                            // FTP 로그인
-                            if($this->ftpConn()) {
-                                // 복사가 붙여넣기가 가능하도록 퍼미션을 변경
-                                if($this->ftpChmod(0777, "index.php")) {
-                                    // 백업 시킴
-                                    $oFileHandler->copyFile($index_path, $index_bak_path, 'Y');
-                                    // Anti-accessXE 캐시용 index.php파일을 적용시킴(복사 overwrite)
-                                    $oFileHandler->copyFile($index_antiaccess_path, $index_path, 'Y');
+                                // 퍼미션을 원래대로 복구
+                                $this->ftpChmod(0644, "index.php");
 
-                                    // 퍼미션을 원래대로 복구
-                                    $this->ftpChmod(0644, "index.php");
-
-                                    // 캐시 설정을 위해 index.php이 복사가 완료 될 경우 기능 적용 설정을 함
-                                    $anti_config->cache->cache_index = $args->cache_index;
-                                }
-
-                                // FTP 종료
-                                $this->FtpDisConn();
+                                // 캐시 설정을 위해 index.php이 복사가 완료 될 경우 기능 적용 설정을 함
+                                $anti_config->cache->cache_index = $args->cache_index;
                             }
-                        }
-                    } else { // 캐시 비적용일 경우
-                        // 백업시켰던 파일이 존재할 경우
-                        if(is_file($index_bak_path)) {
-                            // FTP 로그인
-                            if($this->ftpConn()) {
-                                // 복사가 붙여넣기가 가능하도록 퍼미션을 변경
-                                if($this->ftpChmod(0777, "index.php")) {
-                                    // 백업 시켰던 index.php파일을 복구시킴(복사 overwrite)
-                                    $oFileHandler->copyFile($index_bak_path, $index_path, 'Y');
-                                    // 백업파일을 삭제
-                                    $oFileHandler->removeFile($index_bak_path);
 
-                                    // 퍼미션을 원래대로 복구
-                                    $this->ftpChmod(0644, "index.php");
-
-                                    // 캐시 설정을 위해 index.php이 복사가 완료 될 경우 기능 적용 설정을 함
-                                    $anti_config->cache->cache_index = $args->cache_index;
-                                }
-
-                                // FTP 종료
-                                $this->FtpDisConn();
-                            }
+                            // FTP 종료
+                            $this->FtpDisConn();
                         }
                     }
                 }
             } else {
                 // 수작업으로 캐시기능을 적용할 경우 캐시 기능 적용하기
-                $file_buff = $oFileHandler->readFile($index_path);
-                preg_match_all("!\[([^\>]*)\]!is", $file_buff, $index_ver);
+                preg_match_all("!\[@@([^\>]*)\@@]!is", $file_buff, $index_ver);
 
                 // 이미 캐시 적용이 되었는지 확인 후 적용 되었을 경우 캐시 기능 설정
-                if(@$index_ver[1][0] == "Core 1.4.4.2, Anti-accessXE") $anti_config->cache->cache_index = $args->cache_index;
+                if(@$index_ver[1][0] == "Anti-accessXE") $anti_config->cache->cache_index = $args->cache_index;
             }
 
             // DB Table Optimize 기간 설정
@@ -160,9 +125,42 @@
 
             // 캐시용 index.php에서 처리하기 위해 기본 설정을 파일로 저장
             $anti_config = serialize($anti_config);
-            @FileHandler::writeFile("modules/antiaccess/config/config", $anti_config, 'w');
+            @FileHandler::writeFile("files/antiaccess/config/config", $anti_config, 'w');
 
             $this->setMessage("success_saved");
+        }
+
+        /**
+         * @brief 국가 접근 설정
+         **/
+        function procAntiaccessAdminInsertCountry() {
+            $oModuleController = &getController('module');
+            $anti_config = Context::get('anti_config');
+
+        	$args = Context::gets('country_code', 'country_conn');
+        	if($args->country_code)
+        	{
+				$country_code = explode(',', $args->country_code);
+				foreach($country_code as $val)
+				{
+					if(!$val) continue;
+					$anti_config->country->code[$val] = TRUE;
+				}
+			}
+
+			if($args->country_conn)
+			{
+				$anti_config->country->conn = $args->country_conn;
+			}
+
+            $oModuleController->insertModuleConfig('antiaccess', $anti_config);
+
+            $this->setMessage('success_registed');
+			if (Context::get('success_return_url')){
+				$this->setRedirectUrl(Context::get('success_return_url'));
+			}else{
+				$this->setRedirectUrl(getNotEncodedUrl('', 'module', 'admin', 'act', 'dispAntiaccessAdminConfig'));
+			}
         }
 
         /**
@@ -177,6 +175,7 @@
             if($args->use_block) $anti_config->use->use_block = $args->use_block;
             if($args->use_banned) $anti_config->use->use_banned = $args->use_banned;
             if($args->use_white) $anti_config->use->use_white = $args->use_white;
+            if($args->use_country) $anti_config->use->use_country = $args->use_country;
 
             $oModuleController->insertModuleConfig('antiaccess', $anti_config);
 
@@ -195,14 +194,12 @@
             $oAntiaccessController = &getController('antiaccess');
             $anti_config = Context::get('anti_config');
 
-            $args = Context::gets('ipaddress');
-
             // 등록하려는 IP가 비공인 IP라면 추가하지 않음
-            $args = Context::gets('ipaddress');
-            if(!$oAntiaccessModel->checkIpaddress($args->ipaddress)) return new Object(-1, "msg_invalid_ipaddress");
+            $args = Context::gets('ipaddress', 'public');
+//            if(!$oAntiaccessModel->checkIpaddress($args->ipaddress)) return new Object(-1, "msg_invalid_ipaddress");
             // 등록을 시도하는 HOST가 비공인 IP라면 추가하지 않음
             $request_uri = $oAntiaccessModel->parseUri(Context::get('request_uri'), 'www');
-            if(!$oAntiaccessModel->checkIpaddress($request_uri['host'], true)) return new Object(-1, "msg_invalid_host");
+//            if(!$oAntiaccessModel->checkIpaddress($request_uri['host'], true)) return new Object(-1, "msg_invalid_host");
 
             $is_banip = $oAntiaccessModel->getAntiaccessBanipCount($args);
             if($is_banip) return new Object(-1, "msg_ipaddress_exists");
@@ -214,6 +211,10 @@
             $uri = $oAntiaccessModel->parseUri(Context::get('request_uri'), 'www');
             $args->source_host = $uri['host'];
             $args->apply = 'Y';
+            if($args->public != 'Y')
+            {
+            	$args->mode = 'sync';
+            }
 
             $oAntiaccessController->insertAntiaccessBanip($args);
             $this->setMessage("success_registed");
@@ -266,6 +267,33 @@
         }
 
         /**
+         * @brief 금지 ip 공개 상태 변경
+         **/
+        function procAntiaccessAdminUpdateBanipPublic() {
+            $oAntiaccessModel = &getModel('antiaccess');
+            $oAntiaccessController = &getController('antiaccess');
+
+            $args = Context::gets('ban_srl', 'public');
+            if(!$args->ban_srl || !$args->public) return new Object(-1, "msg_invalid_request");
+
+            if($args->public == 'Y')
+            {
+	            $oBanip = $oAntiaccessModel->getAntiaccessBanipInfo($args);
+				$obj->ipaddress = $oBanip->ipaddress;
+	            $obj->source_host = $oBanip->source_host;
+            	$oAntiaccessController->insertAntiaccessBanipPush($obj);
+            }
+            elseif($args->public == 'N')
+            {
+            	$obj->cart[] = $args->ban_srl;
+            	$oAntiaccessController->deleteAntiaccessBanipPush($obj);
+            }
+
+            $oAntiaccessController->updateAntiaccessBanip($args);
+            $this->setMessage("success_updated");
+        }
+
+        /**
          * @brief 비금지 ip 추가
          **/
         function procAntiaccessAdminInsertWhiteip() {
@@ -274,11 +302,11 @@
             $anti_config = Context::get('anti_config');
 
             // 등록하려는 IP가 비공인 IP라면 추가하지 않음
-            $args = Context::gets('ipaddress');
-            if(!$oAntiaccessModel->checkIpaddress($args->ipaddress)) return new Object(-1, "msg_invalid_ipaddress");
+            $args = Context::gets('ipaddress', 'public');
+            //if(!$oAntiaccessModel->checkIpaddress($args->ipaddress)) return new Object(-1, "msg_invalid_ipaddress");
             // 등록을 시도하는 HOST가 비공인 IP라면 추가하지 않음
             $request_uri = $oAntiaccessModel->parseUri(Context::get('request_uri'), 'www');
-            if(!$oAntiaccessModel->checkIpaddress($request_uri['host'], true)) return new Object(-1, "msg_invalid_host");
+            //if(!$oAntiaccessModel->checkIpaddress($request_uri['host'], true)) return new Object(-1, "msg_invalid_host");
 
             $is_whiteip = $oAntiaccessModel->getAntiaccessWhiteipCount($args);
             if($is_whiteip) return new Object(-1, "msg_ipaddress_exists");
@@ -290,6 +318,10 @@
             $uri = $oAntiaccessModel->parseUri(Context::get('request_uri'), 'www');
             $args->source_host = $uri['host'];
             $args->apply = 'Y';
+            if($args->public != 'Y')
+            {
+            	$args->mode = 'sync';
+            }
 
             $oAntiaccessController->insertAntiaccessWhiteip($args);
             $this->setMessage("success_registed");
@@ -339,6 +371,33 @@
 
             $oAntiaccessController->deleteAntiaccessWhiteip($args);
             $this->setMessage("success_deleted");
+        }
+
+        /**
+         * @brief 비금지 ip 공개 상태 변경
+         **/
+        function procAntiaccessAdminUpdateWhiteipPublic() {
+            $oAntiaccessModel = &getModel('antiaccess');
+            $oAntiaccessController = &getController('antiaccess');
+
+            $args = Context::gets('white_srl', 'public');
+            if(!$args->white_srl || !$args->public) return new Object(-1, "msg_invalid_request");
+
+            if($args->public == 'Y')
+            {
+	            $oWhiteip = $oAntiaccessModel->getAntiaccessWhiteipInfo($args);
+				$obj->ipaddress = $oWhiteip->ipaddress;
+	            $obj->source_host = $oWhiteip->source_host;
+            	$oAntiaccessController->insertAntiaccessWhiteipPush($obj);
+            }
+            elseif($args->public == 'N')
+            {
+            	$obj->cart[] = $args->white_srl;
+            	$oAntiaccessController->deleteAntiaccessWhiteipPush($obj);
+            }
+
+            $oAntiaccessController->updateAntiaccessWhiteip($args);
+            $this->setMessage("success_updated");
         }
 
         /**
@@ -459,7 +518,7 @@
             $uri = $oAntiaccessModel->parseUri($args->host, 'www');
             $request_uri = $oAntiaccessModel->parseUri(Context::get('request_uri'), 'www');
             if($uri['host'] == $request_uri['host']) return new Object(-1, "msg_request_uri_exists");
-            if(!$oAntiaccessModel->checkIpaddress($uri['host'], true) || !$oAntiaccessModel->checkIpaddress($request_uri['host'], true)) return new Object(-1, "msg_invalid_host");
+            //if(!$oAntiaccessModel->checkIpaddress($uri['host'], true) || !$oAntiaccessModel->checkIpaddress($request_uri['host'], true)) return new Object(-1, "msg_invalid_host");
             $args->host = $uri['host'];
             $is_banhost = $oAntiaccessModel->getAntiaccessBanhostCount($args);
             if($is_banhost) return new Object(-1, "msg_host_exists");
@@ -516,10 +575,11 @@
             $uri = $oAntiaccessModel->parseUri($args->host, 'www');
             $request_uri = $oAntiaccessModel->parseUri(Context::get('request_uri'), 'www');
             if($uri['host'] == $request_uri['host']) return new Object(-1, "msg_request_uri_exists");
-            if(!$oAntiaccessModel->checkIpaddress($uri['host'], true) || !$oAntiaccessModel->checkIpaddress($request_uri['host'], true)) return new Object(-1, "msg_invalid_host");
+//            if(!$oAntiaccessModel->checkIpaddress($uri['host'], true) || !$oAntiaccessModel->checkIpaddress($request_uri['host'], true)) return new Object(-1, "msg_invalid_host");
 
             if(!$args->follow_srl) {
                 $obj->host = $args->host;
+				$args->state = 103;
                 $is_followhost = $oAntiaccessModel->getAntiaccessFollowhostCount($obj);
                 if($is_followhost) return new Object(-1, "msg_host_exists");
 

@@ -98,7 +98,7 @@
          **/
         function procAntiaccess() {
             // Antiaccess config load
-            $anti_config = $this->readFile("modules/antiaccess/config/config");
+            $anti_config = $this->readFile(_ANTI_CACHE_PATH_.'files/antiaccess/config/config');
             if(!$anti_config) return;
             $anti_config = unserialize($anti_config);
 
@@ -166,6 +166,8 @@
             return new Object();
         }
     }
+
+    if(!defined('__XE__')) define('__XE__',   true);
 
     $antiaccessIndex = &antiaccessIndex::getInstance();
     $antiaccessIndex->init();

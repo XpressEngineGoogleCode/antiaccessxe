@@ -14,6 +14,7 @@
         <condition operation="notin" column="state" var="not_state" pipe="and" />
         <condition operation="equal" column="my_level" var="my_level" filter="number" pipe="and" />
         <condition operation="equal" column="follow_level" var="follow_level" filter="number" pipe="and" />
+        <condition operation="equal" column="rank" var="rank" pipe="and" />
         <group pipe="and">
             <condition operation="like" column="host" var="s_host" pipe="or" />
             <condition operation="like" column="state" var="s_state" pipe="or" />
@@ -21,6 +22,7 @@
             <condition operation="like" column="follow_level" var="s_follow_level" pipe="or" />
             <condition operation="like_prefix" column="regdate" var="s_regdate" pipe="or" />
             <condition operation="like_prefix" column="last_update" var="s_last_update" pipe="or" />
+            <condition operation="like" column="rank" var="s_rank" pipe="or" />
         </group>
     </conditions>
     <navigation>
